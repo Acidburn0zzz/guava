@@ -42,14 +42,15 @@ public class HelpersTest extends TestCase {
   }
 
   public void testIsEmpty_iterable() {
-    List<Object> list = new ArrayList<Object>();
+    List<Object> list = new ArrayList<>();
     Helpers.assertEmpty(list);
-    Helpers.assertEmpty(new Iterable<Object>() {
-      @Override
-      public Iterator<Object> iterator() {
-        return Collections.emptyList().iterator();
-      }
-    });
+    Helpers.assertEmpty(
+        new Iterable<Object>() {
+          @Override
+          public Iterator<Object> iterator() {
+            return Collections.emptyList().iterator();
+          }
+        });
 
     list.add("a");
     try {
@@ -58,19 +59,20 @@ public class HelpersTest extends TestCase {
     } catch (AssertionFailedError expected) {
     }
     try {
-      Helpers.assertEmpty(new Iterable<String>() {
-        @Override
-        public Iterator<String> iterator() {
-          return Collections.singleton("a").iterator();
-        }
-      });
+      Helpers.assertEmpty(
+          new Iterable<String>() {
+            @Override
+            public Iterator<String> iterator() {
+              return Collections.singleton("a").iterator();
+            }
+          });
       throw new Error();
     } catch (AssertionFailedError expected) {
     }
   }
 
   public void testIsEmpty_map() {
-    Map<Object, Object> map = new HashMap<Object, Object>();
+    Map<Object, Object> map = new HashMap<>();
     Helpers.assertEmpty(map);
 
     map.put("a", "b");

@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import org.junit.Ignore;
 
 /**
  * Tests for {@link Multimap#replaceValues(Object, Iterable)}.
@@ -40,6 +41,7 @@ import java.util.List;
  * @author Louis Wasserman
  */
 @GwtCompatible
+@Ignore // Affects only Android test runner, which respects JUnit 4 annotations on JUnit 3 tests.
 public class MultimapReplaceValuesTester<K, V>
     extends AbstractMultimapTester<K, V, Multimap<K, V>> {
 
@@ -72,7 +74,7 @@ public class MultimapReplaceValuesTester<K, V>
   @MapFeature.Require({SUPPORTS_PUT, SUPPORTS_REMOVE})
   public void testReplaceValuesWithEmpty() {
     int size = multimap().size();
-    List<V> oldValues = new ArrayList<V>(multimap().get(k0()));
+    List<V> oldValues = new ArrayList<>(multimap().get(k0()));
     @SuppressWarnings("unchecked")
     List<V> values = Collections.emptyList();
     assertEquals(oldValues, new ArrayList<V>(multimap().replaceValues(k0(), values)));
@@ -83,7 +85,7 @@ public class MultimapReplaceValuesTester<K, V>
   @MapFeature.Require({SUPPORTS_PUT, SUPPORTS_REMOVE})
   public void testReplaceValuesWithDuplicates() {
     int size = multimap().size();
-    List<V> oldValues = new ArrayList<V>(multimap().get(k0()));
+    List<V> oldValues = new ArrayList<>(multimap().get(k0()));
     List<V> values = Arrays.asList(v0(), v3(), v0());
     assertEquals(oldValues, new ArrayList<V>(multimap().replaceValues(k0(), values)));
     assertEquals(size - oldValues.size() + multimap().get(k0()).size(), multimap().size());

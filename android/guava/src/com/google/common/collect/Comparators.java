@@ -22,19 +22,19 @@ import com.google.common.annotations.Beta;
 import com.google.common.annotations.GwtCompatible;
 import java.util.Comparator;
 import java.util.Iterator;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * Provides static methods for working with {@link Comparator} instances. For many other helpful
- * comparator utilities, see either {@code Comparator} itself (for Java 8 or later), or
- * {@code com.google.common.collect.Ordering} (otherwise).
+ * comparator utilities, see either {@code Comparator} itself (for Java 8 or later), or {@code
+ * com.google.common.collect.Ordering} (otherwise).
  *
  * <h3>Relationship to {@code Ordering}</h3>
  *
  * <p>In light of the significant enhancements to {@code Comparator} in Java 8, the overwhelming
- * majority of usages of {@code Ordering} can be written using only built-in JDK APIs. Because of
- * this, and because it's awkward to have to convert comparators into {@code Ordering} instances,
- * {@code Ordering} and its methods are planned for deletion. This class is intended to
- * "fill the gap" and provide those features of {@code Ordering} not already provided by the JDK.
+ * majority of usages of {@code Ordering} can be written using only built-in JDK APIs. This class is
+ * intended to "fill the gap" and provide those features of {@code Ordering} not already provided by
+ * the JDK.
  *
  * @since 21.0
  * @author Louis Wasserman
@@ -48,12 +48,12 @@ public final class Comparators {
    * Returns a new comparator which sorts iterables by comparing corresponding elements pairwise
    * until a nonzero result is found; imposes "dictionary order." If the end of one iterable is
    * reached, but not the other, the shorter iterable is considered to be less than the longer one.
-   * For example, a lexicographical natural ordering over integers considers {@code
-   * [] < [1] < [1, 1] < [1, 2] < [2]}.
+   * For example, a lexicographical natural ordering over integers considers {@code [] < [1] < [1,
+   * 1] < [1, 2] < [2]}.
    *
-   * <p>Note that {@code Collections.reverseOrder(lexicographical(comparator))} is not
-   * equivalent to {@code lexicographical(Collections.reverseOrder(comparator))} (consider how each
-   * would order {@code [1]} and {@code [1, 1]}).
+   * <p>Note that {@code Collections.reverseOrder(lexicographical(comparator))} is not equivalent to
+   * {@code lexicographical(Collections.reverseOrder(comparator))} (consider how each would order
+   * {@code [1]} and {@code [1, 1]}).
    */
   // Note: 90% of the time we don't add type parameters or wildcards that serve only to "tweak" the
   // desired return type. However, *nested* generics introduce a special class of problems that we
@@ -64,8 +64,8 @@ public final class Comparators {
 
   /**
    * Returns {@code true} if each element in {@code iterable} after the first is greater than or
-   * equal to the element that preceded it, according to the specified comparator. Note that this
-   * is always true when the iterable has fewer than two elements.
+   * equal to the element that preceded it, according to the specified comparator. Note that this is
+   * always true when the iterable has fewer than two elements.
    */
   public static <T> boolean isInOrder(Iterable<? extends T> iterable, Comparator<T> comparator) {
     checkNotNull(comparator);
@@ -103,5 +103,81 @@ public final class Comparators {
       }
     }
     return true;
+  }
+
+  /**
+   * Returns the minimum of the two values. If the values compare as 0, the first is returned.
+   *
+   * <p>The recommended solution for finding the {@code minimum} of some values depends on the type
+   * of your data and the number of elements you have. Read more in the Guava User Guide article on
+   * <a href="https://github.com/google/guava/wiki/CollectionUtilitiesExplained#comparators">{@code
+   * Comparators}</a>.
+   *
+   * @param a first value to compare, returned if less than or equal to b.
+   * @param b second value to compare.
+   * @throws ClassCastException if the parameters are not <i>mutually comparable</i>.
+   * @since 30.0
+   */
+  @Beta
+  public static <T extends Comparable<? super T>> T min(T a, T b) {
+    return (a.compareTo(b) <= 0) ? a : b;
+  }
+
+  /**
+   * Returns the minimum of the two values, according to the given comparator. If the values compare
+   * as equal, the first is returned.
+   *
+   * <p>The recommended solution for finding the {@code minimum} of some values depends on the type
+   * of your data and the number of elements you have. Read more in the Guava User Guide article on
+   * <a href="https://github.com/google/guava/wiki/CollectionUtilitiesExplained#comparators">{@code
+   * Comparators}</a>.
+   *
+   * @param a first value to compare, returned if less than or equal to b
+   * @param b second value to compare.
+   * @throws ClassCastException if the parameters are not <i>mutually comparable</i> using the given
+   *     comparator.
+   * @since 30.0
+   */
+  @Beta
+  public static <T> T min(@NullableDecl T a, @NullableDecl T b, Comparator<T> comparator) {
+    return (comparator.compare(a, b) <= 0) ? a : b;
+  }
+
+  /**
+   * Returns the maximum of the two values. If the values compare as 0, the first is returned.
+   *
+   * <p>The recommended solution for finding the {@code maximum} of some values depends on the type
+   * of your data and the number of elements you have. Read more in the Guava User Guide article on
+   * <a href="https://github.com/google/guava/wiki/CollectionUtilitiesExplained#comparators">{@code
+   * Comparators}</a>.
+   *
+   * @param a first value to compare, returned if greater than or equal to b.
+   * @param b second value to compare.
+   * @throws ClassCastException if the parameters are not <i>mutually comparable</i>.
+   * @since 30.0
+   */
+  @Beta
+  public static <T extends Comparable<? super T>> T max(T a, T b) {
+    return (a.compareTo(b) >= 0) ? a : b;
+  }
+
+  /**
+   * Returns the maximum of the two values, according to the given comparator. If the values compare
+   * as equal, the first is returned.
+   *
+   * <p>The recommended solution for finding the {@code maximum} of some values depends on the type
+   * of your data and the number of elements you have. Read more in the Guava User Guide article on
+   * <a href="https://github.com/google/guava/wiki/CollectionUtilitiesExplained#comparators">{@code
+   * Comparators}</a>.
+   *
+   * @param a first value to compare, returned if greater than or equal to b.
+   * @param b second value to compare.
+   * @throws ClassCastException if the parameters are not <i>mutually comparable</i> using the given
+   *     comparator.
+   * @since 30.0
+   */
+  @Beta
+  public static <T> T max(@NullableDecl T a, @NullableDecl T b, Comparator<T> comparator) {
+    return (comparator.compare(a, b) >= 0) ? a : b;
   }
 }

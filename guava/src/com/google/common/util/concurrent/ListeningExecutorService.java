@@ -15,7 +15,7 @@
 package com.google.common.util.concurrent;
 
 import com.google.common.annotations.GwtIncompatible;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.DoNotMock;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -32,7 +32,9 @@ import java.util.concurrent.TimeUnit;
  * @author Chris Povirk
  * @since 10.0
  */
-@CanIgnoreReturnValue
+@DoNotMock(
+    "Use TestingExecutors.sameThreadScheduledExecutor, or wrap a real Executor from "
+        + "java.util.concurrent.Executors with MoreExecutors.listeningDecorator")
 @GwtIncompatible
 public interface ListeningExecutorService extends ExecutorService {
   /**
@@ -61,7 +63,9 @@ public interface ListeningExecutorService extends ExecutorService {
    *
    * <p>All elements in the returned list must be {@link ListenableFuture} instances. The easiest
    * way to obtain a {@code List<ListenableFuture<T>>} from this method is an unchecked (but safe)
-   * cast:<pre>
+   * cast:
+   *
+   * <pre>
    *   {@code @SuppressWarnings("unchecked") // guaranteed by invokeAll contract}
    *   {@code List<ListenableFuture<T>> futures = (List) executor.invokeAll(tasks);}
    * </pre>
@@ -81,7 +85,9 @@ public interface ListeningExecutorService extends ExecutorService {
    *
    * <p>All elements in the returned list must be {@link ListenableFuture} instances. The easiest
    * way to obtain a {@code List<ListenableFuture<T>>} from this method is an unchecked (but safe)
-   * cast:<pre>
+   * cast:
+   *
+   * <pre>
    *   {@code @SuppressWarnings("unchecked") // guaranteed by invokeAll contract}
    *   {@code List<ListenableFuture<T>> futures = (List) executor.invokeAll(tasks, timeout, unit);}
    * </pre>

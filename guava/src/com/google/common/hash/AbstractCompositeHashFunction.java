@@ -14,9 +14,13 @@
 
 package com.google.common.hash;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.errorprone.annotations.Immutable;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * An abstract composition of multiple hash functions. {@linkplain #newHasher()} delegates to the
@@ -25,7 +29,11 @@ import java.nio.charset.Charset;
  *
  * @author Dimitris Andreou
  */
-abstract class AbstractCompositeHashFunction extends AbstractStreamingHashFunction {
+@Immutable
+@ElementTypesAreNonnullByDefault
+abstract class AbstractCompositeHashFunction extends AbstractHashFunction {
+
+  @SuppressWarnings("Immutable") // array not modified after creation
   final HashFunction[] functions;
 
   AbstractCompositeHashFunction(HashFunction... functions) {
@@ -45,10 +53,24 @@ abstract class AbstractCompositeHashFunction extends AbstractStreamingHashFuncti
 
   @Override
   public Hasher newHasher() {
-    final Hasher[] hashers = new Hasher[functions.length];
+    Hasher[] hashers = new Hasher[functions.length];
     for (int i = 0; i < hashers.length; i++) {
       hashers[i] = functions[i].newHasher();
     }
+    return fromHashers(hashers);
+  }
+
+  @Override
+  public Hasher newHasher(int expectedInputSize) {
+    checkArgument(expectedInputSize >= 0);
+    Hasher[] hashers = new Hasher[functions.length];
+    for (int i = 0; i < hashers.length; i++) {
+      hashers[i] = functions[i].newHasher(expectedInputSize);
+    }
+    return fromHashers(hashers);
+  }
+
+  private Hasher fromHashers(final Hasher[] hashers) {
     return new Hasher() {
       @Override
       public Hasher putByte(byte b) {
@@ -70,6 +92,16 @@ abstract class AbstractCompositeHashFunction extends AbstractStreamingHashFuncti
       public Hasher putBytes(byte[] bytes, int off, int len) {
         for (Hasher hasher : hashers) {
           hasher.putBytes(bytes, off, len);
+        }
+        return this;
+      }
+
+      @Override
+      public Hasher putBytes(ByteBuffer bytes) {
+        int pos = bytes.position();
+        for (Hasher hasher : hashers) {
+          Java8Compatibility.position(bytes, pos);
+          hasher.putBytes(bytes);
         }
         return this;
       }
@@ -147,7 +179,8 @@ abstract class AbstractCompositeHashFunction extends AbstractStreamingHashFuncti
       }
 
       @Override
-      public <T> Hasher putObject(T instance, Funnel<? super T> funnel) {
+      public <T extends @Nullable Object> Hasher putObject(
+          @ParametricNullness T instance, Funnel<? super T> funnel) {
         for (Hasher hasher : hashers) {
           hasher.putObject(instance, funnel);
         }

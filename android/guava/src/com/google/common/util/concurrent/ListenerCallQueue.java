@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Queues;
+import com.google.errorprone.annotations.concurrent.GuardedBy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,13 +27,12 @@ import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.concurrent.GuardedBy;
 
 /**
  * A list of listeners for implementing a concurrency friendly observable object.
  *
  * <p>Listeners are registered once via {@link #addListener} and then may be invoked by {@linkplain
- * #enqueue enqueueing} and then {@linkplain dispatch dispatching} events.
+ * #enqueue enqueueing} and then {@linkplain #dispatch dispatching} events.
  *
  * <p>The API of this class is designed to make it easy to achieve the following properties
  *
@@ -62,7 +62,7 @@ final class ListenerCallQueue<L> {
       Collections.synchronizedList(new ArrayList<PerListenerQueue<L>>());
 
   /** Method reference-compatible listener event. */
-  public interface Event<L> {
+  interface Event<L> {
     /** Call a method on the listener. */
     void call(L listener);
   }
@@ -123,9 +123,9 @@ final class ListenerCallQueue<L> {
 
   /**
    * A special purpose queue/executor that dispatches listener events serially on a configured
-   * executor. Each event event can be added and dispatched as separate phases.
+   * executor. Each event can be added and dispatched as separate phases.
    *
-   * <p>This class is very similar to {@link SerializingExecutor} with the exception that events can
+   * <p>This class is very similar to {@link SequentialExecutor} with the exception that events can
    * be added without necessarily executing immediately.
    */
   private static final class PerListenerQueue<L> implements Runnable {

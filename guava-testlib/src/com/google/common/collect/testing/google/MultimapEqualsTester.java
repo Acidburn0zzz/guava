@@ -27,6 +27,7 @@ import com.google.common.testing.EqualsTester;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
+import org.junit.Ignore;
 
 /**
  * Tester for {@code Multimap.equals}.
@@ -34,6 +35,7 @@ import java.util.Map.Entry;
  * @author Louis Wasserman
  */
 @GwtCompatible
+@Ignore // Affects only Android test runner, which respects JUnit 4 annotations on JUnit 3 tests.
 public class MultimapEqualsTester<K, V> extends AbstractMultimapTester<K, V, Multimap<K, V>> {
   public void testEqualsTrue() {
     new EqualsTester()
@@ -42,7 +44,7 @@ public class MultimapEqualsTester<K, V> extends AbstractMultimapTester<K, V, Mul
   }
 
   public void testEqualsFalse() {
-    List<Entry<K, V>> targetEntries = new ArrayList<Entry<K, V>>(getSampleElements());
+    List<Entry<K, V>> targetEntries = new ArrayList<>(getSampleElements());
     targetEntries.add(Helpers.mapEntry(k0(), v3()));
     new EqualsTester()
         .addEqualityGroup(multimap())

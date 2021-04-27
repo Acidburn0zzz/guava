@@ -31,15 +31,16 @@ import com.google.common.collect.testing.features.MapFeature;
 import java.lang.reflect.Method;
 import java.util.Map;
 import junit.framework.AssertionFailedError;
+import org.junit.Ignore;
 
 /**
- * A generic JUnit test which tests {@link Map#merge}. Can't be
- * invoked directly; please see
- * {@link com.google.common.collect.testing.MapTestSuiteBuilder}.
+ * A generic JUnit test which tests {@link Map#merge}. Can't be invoked directly; please see {@link
+ * com.google.common.collect.testing.MapTestSuiteBuilder}.
  *
  * @author Louis Wasserman
  */
 @GwtCompatible(emulated = true)
+@Ignore // Affects only Android test runner, which respects JUnit 4 annotations on JUnit 3 tests.
 public class MapMergeTester<K, V> extends AbstractMapTester<K, V> {
   @MapFeature.Require(SUPPORTS_PUT)
   public void testAbsent() {
@@ -157,8 +158,7 @@ public class MapMergeTester<K, V> extends AbstractMapTester<K, V> {
                 throw new AssertionFailedError("Should not call merge function if value was null");
               });
       fail("Expected NullPointerException or UnsupportedOperationException");
-    } catch (NullPointerException expected) {
-    } catch (UnsupportedOperationException expected) {
+    } catch (NullPointerException | UnsupportedOperationException expected) {
     }
   }
 
@@ -166,8 +166,7 @@ public class MapMergeTester<K, V> extends AbstractMapTester<K, V> {
     try {
       getMap().merge(k0(), v3(), null);
       fail("Expected NullPointerException or UnsupportedOperationException");
-    } catch (NullPointerException expected) {
-    } catch (UnsupportedOperationException expected) {
+    } catch (NullPointerException | UnsupportedOperationException expected) {
     }
   }
 

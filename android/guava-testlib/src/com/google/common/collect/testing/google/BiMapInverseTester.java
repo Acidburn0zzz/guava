@@ -28,6 +28,7 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
+import org.junit.Ignore;
 
 /**
  * Tests for the {@code inverse} view of a BiMap.
@@ -38,6 +39,7 @@ import java.util.List;
  * @author Louis Wasserman
  */
 @GwtCompatible(emulated = true)
+@Ignore // Affects only Android test runner, which respects JUnit 4 annotations on JUnit 3 tests.
 public class BiMapInverseTester<K, V> extends AbstractBiMapTester<K, V> {
 
   public void testInverseSame() {
@@ -46,7 +48,7 @@ public class BiMapInverseTester<K, V> extends AbstractBiMapTester<K, V> {
 
   @CollectionFeature.Require(SERIALIZABLE)
   public void testInverseSerialization() {
-    BiMapPair<K, V> pair = new BiMapPair<K, V>(getMap());
+    BiMapPair<K, V> pair = new BiMapPair<>(getMap());
     BiMapPair<K, V> copy = SerializableTester.reserialize(pair);
     assertEquals(pair.forward, copy.forward);
     assertEquals(pair.backward, copy.backward);

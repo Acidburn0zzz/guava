@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * Reserializes the sets created by another test set generator.
  *
- * TODO: make CollectionTestSuiteBuilder test reserialized collections
+ * <p>TODO: make CollectionTestSuiteBuilder test reserialized collections
  *
  * @author Jesse Wilson
  */
@@ -58,9 +58,7 @@ public class ReserializingTestCollectionGenerator<E> implements TestCollectionGe
       out.writeObject(object);
       ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()));
       return (T) in.readObject();
-    } catch (IOException e) {
-      Helpers.fail(e, e.getMessage());
-    } catch (ClassNotFoundException e) {
+    } catch (IOException | ClassNotFoundException e) {
       Helpers.fail(e, e.getMessage());
     }
     throw new AssertionError("not reachable");

@@ -21,13 +21,13 @@ import com.google.common.annotations.GwtIncompatible;
 import com.google.j2objc.annotations.J2ObjCIncompatible;
 import java.nio.file.FileSystemException;
 import java.nio.file.SecureDirectoryStream;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Exception indicating that a recursive delete can't be performed because the file system does not
  * have the support necessary to guarantee that it is not vulnerable to race conditions that would
- * allow it to delete files and directories outside of the directory being deleted (i.e.,
- * {@link SecureDirectoryStream} is not supported).
+ * allow it to delete files and directories outside of the directory being deleted (i.e., {@link
+ * SecureDirectoryStream} is not supported).
  *
  * <p>{@link RecursiveDeleteOption#ALLOW_INSECURE} can be used to force the recursive delete method
  * to proceed anyway.

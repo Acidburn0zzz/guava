@@ -48,15 +48,14 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
- * Synchronized collection views. The returned synchronized collection views are
- * serializable if the backing collection and the mutex are serializable.
+ * Synchronized collection views. The returned synchronized collection views are serializable if the
+ * backing collection and the mutex are serializable.
  *
- * <p>If {@code null} is passed as the {@code mutex} parameter to any of this
- * class's top-level methods or inner class constructors, the created object
- * uses itself as the synchronization mutex.
+ * <p>If {@code null} is passed as the {@code mutex} parameter to any of this class's top-level
+ * methods or inner class constructors, the created object uses itself as the synchronization mutex.
  *
  * <p>This class should be used by other collection classes only.
  *
@@ -477,8 +476,8 @@ final class Synchronized {
 
   private static class SynchronizedMultiset<E> extends SynchronizedCollection<E>
       implements Multiset<E> {
-    transient Set<E> elementSet;
-    transient Set<Entry<E>> entrySet;
+    transient @Nullable Set<E> elementSet;
+    transient @Nullable Set<Entry<E>> entrySet;
 
     SynchronizedMultiset(Multiset<E> delegate, @Nullable Object mutex) {
       super(delegate, mutex);
@@ -565,19 +564,19 @@ final class Synchronized {
   }
 
   static <K, V> Multimap<K, V> multimap(Multimap<K, V> multimap, @Nullable Object mutex) {
-    if (multimap instanceof SynchronizedMultimap || multimap instanceof ImmutableMultimap) {
+    if (multimap instanceof SynchronizedMultimap || multimap instanceof BaseImmutableMultimap) {
       return multimap;
     }
-    return new SynchronizedMultimap<K, V>(multimap, mutex);
+    return new SynchronizedMultimap<>(multimap, mutex);
   }
 
   private static class SynchronizedMultimap<K, V> extends SynchronizedObject
       implements Multimap<K, V> {
-    transient Set<K> keySet;
-    transient Collection<V> valuesCollection;
-    transient Collection<Map.Entry<K, V>> entries;
-    transient Map<K, Collection<V>> asMap;
-    transient Multiset<K> keys;
+    transient @Nullable Set<K> keySet;
+    transient @Nullable Collection<V> valuesCollection;
+    transient @Nullable Collection<Entry<K, V>> entries;
+    transient @Nullable Map<K, Collection<V>> asMap;
+    transient @Nullable Multiset<K> keys;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -701,7 +700,7 @@ final class Synchronized {
     }
 
     @Override
-    public Collection<Map.Entry<K, V>> entries() {
+    public Collection<Entry<K, V>> entries() {
       synchronized (mutex) {
         if (entries == null) {
           entries = typePreservingCollection(delegate().entries(), mutex);
@@ -721,7 +720,7 @@ final class Synchronized {
     public Map<K, Collection<V>> asMap() {
       synchronized (mutex) {
         if (asMap == null) {
-          asMap = new SynchronizedAsMap<K, V>(delegate().asMap(), mutex);
+          asMap = new SynchronizedAsMap<>(delegate().asMap(), mutex);
         }
         return asMap;
       }
@@ -759,10 +758,10 @@ final class Synchronized {
 
   static <K, V> ListMultimap<K, V> listMultimap(
       ListMultimap<K, V> multimap, @Nullable Object mutex) {
-    if (multimap instanceof SynchronizedListMultimap || multimap instanceof ImmutableListMultimap) {
+    if (multimap instanceof SynchronizedListMultimap || multimap instanceof BaseImmutableMultimap) {
       return multimap;
     }
-    return new SynchronizedListMultimap<K, V>(multimap, mutex);
+    return new SynchronizedListMultimap<>(multimap, mutex);
   }
 
   private static class SynchronizedListMultimap<K, V> extends SynchronizedMultimap<K, V>
@@ -801,15 +800,15 @@ final class Synchronized {
   }
 
   static <K, V> SetMultimap<K, V> setMultimap(SetMultimap<K, V> multimap, @Nullable Object mutex) {
-    if (multimap instanceof SynchronizedSetMultimap || multimap instanceof ImmutableSetMultimap) {
+    if (multimap instanceof SynchronizedSetMultimap || multimap instanceof BaseImmutableMultimap) {
       return multimap;
     }
-    return new SynchronizedSetMultimap<K, V>(multimap, mutex);
+    return new SynchronizedSetMultimap<>(multimap, mutex);
   }
 
   private static class SynchronizedSetMultimap<K, V> extends SynchronizedMultimap<K, V>
       implements SetMultimap<K, V> {
-    transient Set<Map.Entry<K, V>> entrySet;
+    transient @Nullable Set<Entry<K, V>> entrySet;
 
     SynchronizedSetMultimap(SetMultimap<K, V> delegate, @Nullable Object mutex) {
       super(delegate, mutex);
@@ -842,7 +841,7 @@ final class Synchronized {
     }
 
     @Override
-    public Set<Map.Entry<K, V>> entries() {
+    public Set<Entry<K, V>> entries() {
       synchronized (mutex) {
         if (entrySet == null) {
           entrySet = set(delegate().entries(), mutex);
@@ -859,7 +858,7 @@ final class Synchronized {
     if (multimap instanceof SynchronizedSortedSetMultimap) {
       return multimap;
     }
-    return new SynchronizedSortedSetMultimap<K, V>(multimap, mutex);
+    return new SynchronizedSortedSetMultimap<>(multimap, mutex);
   }
 
   private static class SynchronizedSortedSetMultimap<K, V> extends SynchronizedSetMultimap<K, V>
@@ -927,21 +926,21 @@ final class Synchronized {
   }
 
   private static class SynchronizedAsMapEntries<K, V>
-      extends SynchronizedSet<Map.Entry<K, Collection<V>>> {
-    SynchronizedAsMapEntries(Set<Map.Entry<K, Collection<V>>> delegate, @Nullable Object mutex) {
+      extends SynchronizedSet<Entry<K, Collection<V>>> {
+    SynchronizedAsMapEntries(Set<Entry<K, Collection<V>>> delegate, @Nullable Object mutex) {
       super(delegate, mutex);
     }
 
     @Override
-    public Iterator<Map.Entry<K, Collection<V>>> iterator() {
+    public Iterator<Entry<K, Collection<V>>> iterator() {
       // Must be manually synchronized.
-      return new TransformedIterator<Map.Entry<K, Collection<V>>, Map.Entry<K, Collection<V>>>(
+      return new TransformedIterator<Entry<K, Collection<V>>, Entry<K, Collection<V>>>(
           super.iterator()) {
         @Override
-        Map.Entry<K, Collection<V>> transform(final Map.Entry<K, Collection<V>> entry) {
+        Entry<K, Collection<V>> transform(final Entry<K, Collection<V>> entry) {
           return new ForwardingMapEntry<K, Collection<V>>() {
             @Override
-            protected Map.Entry<K, Collection<V>> delegate() {
+            protected Entry<K, Collection<V>> delegate() {
               return entry;
             }
 
@@ -1020,13 +1019,13 @@ final class Synchronized {
 
   @VisibleForTesting
   static <K, V> Map<K, V> map(Map<K, V> map, @Nullable Object mutex) {
-    return new SynchronizedMap<K, V>(map, mutex);
+    return new SynchronizedMap<>(map, mutex);
   }
 
   private static class SynchronizedMap<K, V> extends SynchronizedObject implements Map<K, V> {
-    transient Set<K> keySet;
-    transient Collection<V> values;
-    transient Set<Map.Entry<K, V>> entrySet;
+    transient @Nullable Set<K> keySet;
+    transient @Nullable Collection<V> values;
+    transient @Nullable Set<Entry<K, V>> entrySet;
 
     SynchronizedMap(Map<K, V> delegate, @Nullable Object mutex) {
       super(delegate, mutex);
@@ -1060,7 +1059,7 @@ final class Synchronized {
     }
 
     @Override
-    public Set<Map.Entry<K, V>> entrySet() {
+    public Set<Entry<K, V>> entrySet() {
       synchronized (mutex) {
         if (entrySet == null) {
           entrySet = set(delegate().entrySet(), mutex);
@@ -1231,7 +1230,7 @@ final class Synchronized {
   }
 
   static <K, V> SortedMap<K, V> sortedMap(SortedMap<K, V> sortedMap, @Nullable Object mutex) {
-    return new SynchronizedSortedMap<K, V>(sortedMap, mutex);
+    return new SynchronizedSortedMap<>(sortedMap, mutex);
   }
 
   static class SynchronizedSortedMap<K, V> extends SynchronizedMap<K, V>
@@ -1295,15 +1294,14 @@ final class Synchronized {
     if (bimap instanceof SynchronizedBiMap || bimap instanceof ImmutableBiMap) {
       return bimap;
     }
-    return new SynchronizedBiMap<K, V>(bimap, mutex, null);
+    return new SynchronizedBiMap<>(bimap, mutex, null);
   }
 
   @VisibleForTesting
   static class SynchronizedBiMap<K, V> extends SynchronizedMap<K, V>
       implements BiMap<K, V>, Serializable {
-    private transient Set<V> valueSet;
-    @RetainedWith
-    private transient BiMap<V, K> inverse;
+    private transient @Nullable Set<V> valueSet;
+    @RetainedWith private transient @Nullable BiMap<V, K> inverse;
 
     private SynchronizedBiMap(
         BiMap<K, V> delegate, @Nullable Object mutex, @Nullable BiMap<V, K> inverse) {
@@ -1337,7 +1335,7 @@ final class Synchronized {
     public BiMap<V, K> inverse() {
       synchronized (mutex) {
         if (inverse == null) {
-          inverse = new SynchronizedBiMap<V, K>(delegate().inverse(), mutex, this);
+          inverse = new SynchronizedBiMap<>(delegate().inverse(), mutex, this);
         }
         return inverse;
       }
@@ -1347,8 +1345,8 @@ final class Synchronized {
   }
 
   private static class SynchronizedAsMap<K, V> extends SynchronizedMap<K, Collection<V>> {
-    transient Set<Map.Entry<K, Collection<V>>> asMapEntrySet;
-    transient Collection<Collection<V>> asMapValues;
+    transient @Nullable Set<Entry<K, Collection<V>>> asMapEntrySet;
+    transient @Nullable Collection<Collection<V>> asMapValues;
 
     SynchronizedAsMap(Map<K, Collection<V>> delegate, @Nullable Object mutex) {
       super(delegate, mutex);
@@ -1363,10 +1361,10 @@ final class Synchronized {
     }
 
     @Override
-    public Set<Map.Entry<K, Collection<V>>> entrySet() {
+    public Set<Entry<K, Collection<V>>> entrySet() {
       synchronized (mutex) {
         if (asMapEntrySet == null) {
-          asMapEntrySet = new SynchronizedAsMapEntries<K, V>(delegate().entrySet(), mutex);
+          asMapEntrySet = new SynchronizedAsMapEntries<>(delegate().entrySet(), mutex);
         }
         return asMapEntrySet;
       }
@@ -1435,7 +1433,7 @@ final class Synchronized {
       return delegate().descendingIterator(); // manually synchronized
     }
 
-    transient NavigableSet<E> descendingSet;
+    transient @Nullable NavigableSet<E> descendingSet;
 
     @Override
     public NavigableSet<E> descendingSet() {
@@ -1461,6 +1459,11 @@ final class Synchronized {
       synchronized (mutex) {
         return Synchronized.navigableSet(delegate().headSet(toElement, inclusive), mutex);
       }
+    }
+
+    @Override
+    public SortedSet<E> headSet(E toElement) {
+      return headSet(toElement, false);
     }
 
     @Override
@@ -1501,20 +1504,15 @@ final class Synchronized {
     }
 
     @Override
+    public SortedSet<E> subSet(E fromElement, E toElement) {
+      return subSet(fromElement, true, toElement, false);
+    }
+
+    @Override
     public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
       synchronized (mutex) {
         return Synchronized.navigableSet(delegate().tailSet(fromElement, inclusive), mutex);
       }
-    }
-
-    @Override
-    public SortedSet<E> headSet(E toElement) {
-      return headSet(toElement, false);
-    }
-
-    @Override
-    public SortedSet<E> subSet(E fromElement, E toElement) {
-      return subSet(fromElement, true, toElement, false);
     }
 
     @Override
@@ -1543,7 +1541,7 @@ final class Synchronized {
   @GwtIncompatible // NavigableMap
   static <K, V> NavigableMap<K, V> navigableMap(
       NavigableMap<K, V> navigableMap, @Nullable Object mutex) {
-    return new SynchronizedNavigableMap<K, V>(navigableMap, mutex);
+    return new SynchronizedNavigableMap<>(navigableMap, mutex);
   }
 
   @GwtIncompatible // NavigableMap
@@ -1574,7 +1572,7 @@ final class Synchronized {
       }
     }
 
-    transient NavigableSet<K> descendingKeySet;
+    transient @Nullable NavigableSet<K> descendingKeySet;
 
     @Override
     public NavigableSet<K> descendingKeySet() {
@@ -1586,7 +1584,7 @@ final class Synchronized {
       }
     }
 
-    transient NavigableMap<K, V> descendingMap;
+    transient @Nullable NavigableMap<K, V> descendingMap;
 
     @Override
     public NavigableMap<K, V> descendingMap() {
@@ -1624,6 +1622,11 @@ final class Synchronized {
       synchronized (mutex) {
         return navigableMap(delegate().headMap(toKey, inclusive), mutex);
       }
+    }
+
+    @Override
+    public SortedMap<K, V> headMap(K toKey) {
+      return headMap(toKey, false);
     }
 
     @Override
@@ -1666,7 +1669,7 @@ final class Synchronized {
       return navigableKeySet();
     }
 
-    transient NavigableSet<K> navigableKeySet;
+    transient @Nullable NavigableSet<K> navigableKeySet;
 
     @Override
     public NavigableSet<K> navigableKeySet() {
@@ -1701,20 +1704,15 @@ final class Synchronized {
     }
 
     @Override
+    public SortedMap<K, V> subMap(K fromKey, K toKey) {
+      return subMap(fromKey, true, toKey, false);
+    }
+
+    @Override
     public NavigableMap<K, V> tailMap(K fromKey, boolean inclusive) {
       synchronized (mutex) {
         return navigableMap(delegate().tailMap(fromKey, inclusive), mutex);
       }
-    }
-
-    @Override
-    public SortedMap<K, V> headMap(K toKey) {
-      return headMap(toKey, false);
-    }
-
-    @Override
-    public SortedMap<K, V> subMap(K fromKey, K toKey) {
-      return subMap(fromKey, true, toKey, false);
     }
 
     @Override
@@ -1731,7 +1729,7 @@ final class Synchronized {
     if (entry == null) {
       return null;
     }
-    return new SynchronizedEntry<K, V>(entry, mutex);
+    return new SynchronizedEntry<>(entry, mutex);
   }
 
   @GwtIncompatible // works but is needed only for NavigableMap
@@ -1974,9 +1972,9 @@ final class Synchronized {
 
     private static final long serialVersionUID = 0;
   }
-  
+
   static <R, C, V> Table<R, C, V> table(Table<R, C, V> table, Object mutex) {
-    return new SynchronizedTable<R, C, V>(table, mutex);
+    return new SynchronizedTable<>(table, mutex);
   }
 
   private static final class SynchronizedTable<R, C, V> extends SynchronizedObject

@@ -37,16 +37,17 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.junit.Ignore;
 
 /**
- * A generic JUnit test which tests {@code subList()} operations on a list.
- * Can't be invoked directly; please see
- * {@link com.google.common.collect.testing.ListTestSuiteBuilder}.
+ * A generic JUnit test which tests {@code subList()} operations on a list. Can't be invoked
+ * directly; please see {@link com.google.common.collect.testing.ListTestSuiteBuilder}.
  *
  * @author Chris Povirk
  */
 @SuppressWarnings("unchecked") // too many "unchecked generic array creations"
 @GwtCompatible(emulated = true)
+@Ignore // Affects only Android test runner, which respects JUnit 4 annotations on JUnit 3 tests.
 public class ListSubListTester<E> extends AbstractListTester<E> {
   public void testSubList_startNegative() {
     try {
@@ -196,11 +197,11 @@ public class ListSubListTester<E> extends AbstractListTester<E> {
   public void testSubList_size() {
     List<E> list = getList();
     int size = getNumElements();
-    assertEquals(list.subList(0, size).size(), size);
-    assertEquals(list.subList(0, size - 1).size(), size - 1);
-    assertEquals(list.subList(1, size).size(), size - 1);
-    assertEquals(list.subList(size, size).size(), 0);
-    assertEquals(list.subList(0, 0).size(), 0);
+    assertEquals(size, list.subList(0, size).size());
+    assertEquals(size - 1, list.subList(0, size - 1).size());
+    assertEquals(size - 1, list.subList(1, size).size());
+    assertEquals(0, list.subList(size, size).size());
+    assertEquals(0, list.subList(0, 0).size());
   }
 
   @CollectionSize.Require(absent = {ZERO})
@@ -214,7 +215,7 @@ public class ListSubListTester<E> extends AbstractListTester<E> {
             list.subList(1, size),
             list.subList(0, 0),
             list.subList(size, size))) {
-      assertEquals(subList.isEmpty(), subList.size() == 0);
+      assertEquals(subList.size() == 0, subList.isEmpty());
     }
   }
 
@@ -267,15 +268,15 @@ public class ListSubListTester<E> extends AbstractListTester<E> {
     List<E> copy = list.subList(0, size);
     List<E> head = list.subList(0, size - 1);
     List<E> tail = list.subList(1, size);
-    assertEquals(copy.indexOf(list.get(0)), 0);
-    assertEquals(head.indexOf(list.get(0)), 0);
-    assertEquals(tail.indexOf(list.get(1)), 0);
+    assertEquals(0, copy.indexOf(list.get(0)));
+    assertEquals(0, head.indexOf(list.get(0)));
+    assertEquals(0, tail.indexOf(list.get(1)));
     // The following assumes all elements are distinct.
-    assertEquals(copy.indexOf(list.get(size - 1)), size - 1);
-    assertEquals(head.indexOf(list.get(size - 2)), size - 2);
-    assertEquals(tail.indexOf(list.get(size - 1)), size - 2);
-    assertEquals(head.indexOf(list.get(size - 1)), -1);
-    assertEquals(tail.indexOf(list.get(0)), -1);
+    assertEquals(size - 1, copy.indexOf(list.get(size - 1)));
+    assertEquals(size - 2, head.indexOf(list.get(size - 2)));
+    assertEquals(size - 2, tail.indexOf(list.get(size - 1)));
+    assertEquals(-1, head.indexOf(list.get(size - 1)));
+    assertEquals(-1, tail.indexOf(list.get(0)));
   }
 
   @CollectionSize.Require(absent = {ZERO, ONE})
@@ -285,15 +286,15 @@ public class ListSubListTester<E> extends AbstractListTester<E> {
     List<E> copy = list.subList(0, size);
     List<E> head = list.subList(0, size - 1);
     List<E> tail = list.subList(1, size);
-    assertEquals(copy.lastIndexOf(list.get(size - 1)), size - 1);
-    assertEquals(head.lastIndexOf(list.get(size - 2)), size - 2);
-    assertEquals(tail.lastIndexOf(list.get(size - 1)), size - 2);
+    assertEquals(size - 1, copy.lastIndexOf(list.get(size - 1)));
+    assertEquals(size - 2, head.lastIndexOf(list.get(size - 2)));
+    assertEquals(size - 2, tail.lastIndexOf(list.get(size - 1)));
     // The following assumes all elements are distinct.
-    assertEquals(copy.lastIndexOf(list.get(0)), 0);
-    assertEquals(head.lastIndexOf(list.get(0)), 0);
-    assertEquals(tail.lastIndexOf(list.get(1)), 0);
-    assertEquals(head.lastIndexOf(list.get(size - 1)), -1);
-    assertEquals(tail.lastIndexOf(list.get(0)), -1);
+    assertEquals(0, copy.lastIndexOf(list.get(0)));
+    assertEquals(0, head.lastIndexOf(list.get(0)));
+    assertEquals(0, tail.lastIndexOf(list.get(1)));
+    assertEquals(-1, head.lastIndexOf(list.get(size - 1)));
+    assertEquals(-1, tail.lastIndexOf(list.get(0)));
   }
 
   @CollectionFeature.Require(SERIALIZABLE_INCLUDING_VIEWS)
@@ -313,12 +314,10 @@ public class ListSubListTester<E> extends AbstractListTester<E> {
   }
 
   /**
-   * Returns the {@link Method} instance for
-   * {@link #testSubList_originalListSetAffectsSubList()} so that tests
-   * of {@link CopyOnWriteArrayList} can suppress them with
-   * {@code FeatureSpecificTestSuiteBuilder.suppressing()} until <a
-   * href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6570631">Sun bug
-   * 6570631</a> is fixed.
+   * Returns the {@link Method} instance for {@link #testSubList_originalListSetAffectsSubList()} so
+   * that tests of {@link CopyOnWriteArrayList} can suppress them with {@code
+   * FeatureSpecificTestSuiteBuilder.suppressing()} until <a
+   * href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6570631">Sun bug 6570631</a> is fixed.
    */
   @GwtIncompatible // reflection
   public static Method getSubListOriginalListSetAffectsSubListMethod() {
@@ -326,12 +325,11 @@ public class ListSubListTester<E> extends AbstractListTester<E> {
   }
 
   /**
-   * Returns the {@link Method} instance for
-   * {@link #testSubList_originalListSetAffectsSubListLargeList()} ()} so that
-   * tests of {@link CopyOnWriteArrayList} can suppress them with
-   * {@code FeatureSpecificTestSuiteBuilder.suppressing()} until <a
-   * href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6570631">Sun bug
-   * 6570631</a> is fixed.
+   * Returns the {@link Method} instance for {@link
+   * #testSubList_originalListSetAffectsSubListLargeList()} ()} so that tests of {@link
+   * CopyOnWriteArrayList} can suppress them with {@code
+   * FeatureSpecificTestSuiteBuilder.suppressing()} until <a
+   * href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6570631">Sun bug 6570631</a> is fixed.
    */
   @GwtIncompatible // reflection
   public static Method getSubListOriginalListSetAffectsSubListLargeListMethod() {
@@ -339,12 +337,11 @@ public class ListSubListTester<E> extends AbstractListTester<E> {
   }
 
   /**
-   * Returns the {@link Method} instance for
-   * {@link #testSubList_subListRemoveAffectsOriginalLargeList()} so that tests
-   * of {@link CopyOnWriteArrayList} can suppress it with
-   * {@code FeatureSpecificTestSuiteBuilder.suppressing()} until <a
-   * href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6570575">Sun bug
-   * 6570575</a> is fixed.
+   * Returns the {@link Method} instance for {@link
+   * #testSubList_subListRemoveAffectsOriginalLargeList()} so that tests of {@link
+   * CopyOnWriteArrayList} can suppress it with {@code
+   * FeatureSpecificTestSuiteBuilder.suppressing()} until <a
+   * href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6570575">Sun bug 6570575</a> is fixed.
    */
   @GwtIncompatible // reflection
   public static Method getSubListSubListRemoveAffectsOriginalLargeListMethod() {

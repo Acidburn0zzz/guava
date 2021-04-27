@@ -24,18 +24,23 @@ import java.util.Set;
  *
  * @author James Sexton
  */
+@ElementTypesAreNonnullByDefault
 abstract class ForwardingGraph<N> extends AbstractGraph<N> {
 
-  protected abstract BaseGraph<N> delegate();
+  abstract BaseGraph<N> delegate();
 
   @Override
   public Set<N> nodes() {
     return delegate().nodes();
   }
 
+  /**
+   * Defer to {@link AbstractGraph#edges()} (based on {@link #successors(Object)}) for full edges()
+   * implementation.
+   */
   @Override
-  public Set<EndpointPair<N>> edges() {
-    return delegate().edges();
+  protected long edgeCount() {
+    return delegate().edges().size();
   }
 
   @Override
@@ -54,6 +59,11 @@ abstract class ForwardingGraph<N> extends AbstractGraph<N> {
   }
 
   @Override
+  public ElementOrder<N> incidentEdgeOrder() {
+    return delegate().incidentEdgeOrder();
+  }
+
+  @Override
   public Set<N> adjacentNodes(N node) {
     return delegate().adjacentNodes(node);
   }
@@ -69,6 +79,11 @@ abstract class ForwardingGraph<N> extends AbstractGraph<N> {
   }
 
   @Override
+  public Set<EndpointPair<N>> incidentEdges(N node) {
+    return delegate().incidentEdges(node);
+  }
+
+  @Override
   public int degree(N node) {
     return delegate().degree(node);
   }
@@ -81,5 +96,15 @@ abstract class ForwardingGraph<N> extends AbstractGraph<N> {
   @Override
   public int outDegree(N node) {
     return delegate().outDegree(node);
+  }
+
+  @Override
+  public boolean hasEdgeConnecting(N nodeU, N nodeV) {
+    return delegate().hasEdgeConnecting(nodeU, nodeV);
+  }
+
+  @Override
+  public boolean hasEdgeConnecting(EndpointPair<N> endpoints) {
+    return delegate().hasEdgeConnecting(endpoints);
   }
 }

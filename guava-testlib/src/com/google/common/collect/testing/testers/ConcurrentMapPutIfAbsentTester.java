@@ -25,17 +25,19 @@ import com.google.common.annotations.GwtCompatible;
 import com.google.common.collect.testing.AbstractMapTester;
 import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.collect.testing.features.MapFeature;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentMap;
+import org.junit.Ignore;
 
 /**
  * A generic JUnit test which tests {@code putIfAbsent} operations on a concurrent map. Can't be
- * invoked directly; please see
- * {@link com.google.common.collect.testing.ConcurrentMapTestSuiteBuilder}.
+ * invoked directly; please see {@link
+ * com.google.common.collect.testing.ConcurrentMapTestSuiteBuilder}.
  *
  * @author Louis Wasserman
  */
 @GwtCompatible
+@Ignore // Affects only Android test runner, which respects JUnit 4 annotations on JUnit 3 tests.
 public class ConcurrentMapPutIfAbsentTester<K, V> extends AbstractMapTester<K, V> {
   @Override
   protected ConcurrentMap<K, V> getMap() {
@@ -128,7 +130,7 @@ public class ConcurrentMapPutIfAbsentTester<K, V> extends AbstractMapTester<K, V
         "Should not contain null after unsupported putIfAbsent(present, null)");
   }
 
-  private V putIfAbsent(Map.Entry<K, V> entry) {
+  private V putIfAbsent(Entry<K, V> entry) {
     return getMap().putIfAbsent(entry.getKey(), entry.getValue());
   }
 }

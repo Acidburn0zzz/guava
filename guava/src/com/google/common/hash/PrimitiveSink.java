@@ -16,6 +16,7 @@ package com.google.common.hash;
 
 import com.google.common.annotations.Beta;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 /**
@@ -26,6 +27,7 @@ import java.nio.charset.Charset;
  */
 @Beta
 @CanIgnoreReturnValue
+@ElementTypesAreNonnullByDefault
 public interface PrimitiveSink {
   /**
    * Puts a byte into this sink.
@@ -57,38 +59,35 @@ public interface PrimitiveSink {
   PrimitiveSink putBytes(byte[] bytes, int off, int len);
 
   /**
-   * Puts a short into this sink.
+   * Puts the remaining bytes of a byte buffer into this sink. {@code bytes.position()} is the first
+   * byte written, {@code bytes.limit() - 1} is the last. The position of the buffer will be equal
+   * to the limit when this method returns.
+   *
+   * @param bytes a byte buffer
+   * @return this instance
+   * @since 23.0
    */
+  PrimitiveSink putBytes(ByteBuffer bytes);
+
+  /** Puts a short into this sink. */
   PrimitiveSink putShort(short s);
 
-  /**
-   * Puts an int into this sink.
-   */
+  /** Puts an int into this sink. */
   PrimitiveSink putInt(int i);
 
-  /**
-   * Puts a long into this sink.
-   */
+  /** Puts a long into this sink. */
   PrimitiveSink putLong(long l);
 
-  /**
-   * Puts a float into this sink.
-   */
+  /** Puts a float into this sink. */
   PrimitiveSink putFloat(float f);
 
-  /**
-   * Puts a double into this sink.
-   */
+  /** Puts a double into this sink. */
   PrimitiveSink putDouble(double d);
 
-  /**
-   * Puts a boolean into this sink.
-   */
+  /** Puts a boolean into this sink. */
   PrimitiveSink putBoolean(boolean b);
 
-  /**
-   * Puts a character into this sink.
-   */
+  /** Puts a character into this sink. */
   PrimitiveSink putChar(char c);
 
   /**

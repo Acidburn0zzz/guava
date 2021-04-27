@@ -22,7 +22,7 @@ import com.google.common.io.SourceSinkFactory.CharSinkFactory;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Method;
-import java.util.Map;
+import java.util.Map.Entry;
 import junit.framework.TestSuite;
 
 /**
@@ -34,12 +34,11 @@ import junit.framework.TestSuite;
 @AndroidIncompatible // Android doesn't understand tests that lack default constructors.
 public class CharSinkTester extends SourceSinkTester<CharSink, String, CharSinkFactory> {
 
-  private static final ImmutableList<Method> testMethods
-      = getTestMethods(CharSinkTester.class);
+  private static final ImmutableList<Method> testMethods = getTestMethods(CharSinkTester.class);
 
   static TestSuite tests(String name, CharSinkFactory factory) {
     TestSuite suite = new TestSuite(name);
-    for (Map.Entry<String, String> entry : TEST_STRINGS.entrySet()) {
+    for (Entry<String, String> entry : TEST_STRINGS.entrySet()) {
       String desc = entry.getKey();
       TestSuite stringSuite = suiteForString(name, factory, entry.getValue(), desc);
       suite.addTest(stringSuite);
@@ -47,8 +46,8 @@ public class CharSinkTester extends SourceSinkTester<CharSink, String, CharSinkF
     return suite;
   }
 
-  static TestSuite suiteForString(String name, CharSinkFactory factory,
-      String string, String desc) {
+  static TestSuite suiteForString(
+      String name, CharSinkFactory factory, String string, String desc) {
     TestSuite stringSuite = new TestSuite(name + " [" + desc + "]");
     for (final Method method : testMethods) {
       stringSuite.addTest(new CharSinkTester(factory, string, name, desc, method));
@@ -61,8 +60,8 @@ public class CharSinkTester extends SourceSinkTester<CharSink, String, CharSinkF
 
   private CharSink sink;
 
-  public CharSinkTester(CharSinkFactory factory, String string,
-      String suiteName, String caseDesc, Method method) {
+  public CharSinkTester(
+      CharSinkFactory factory, String string, String suiteName, String caseDesc, Method method) {
     super(factory, string, suiteName, caseDesc, method);
     this.lines = getLines(string);
     this.expectedLines = getLines(expected);
@@ -134,9 +133,7 @@ public class CharSinkTester extends SourceSinkTester<CharSink, String, CharSinkF
   }
 
   private void assertContainsExpectedLines(String separator) throws IOException {
-    String expected = expectedLines.isEmpty()
-        ? ""
-        : Joiner.on(separator).join(expectedLines);
+    String expected = expectedLines.isEmpty() ? "" : Joiner.on(separator).join(expectedLines);
     if (!lines.isEmpty()) {
       // if we wrote any lines in writeLines(), there will be a trailing newline
       expected += separator;

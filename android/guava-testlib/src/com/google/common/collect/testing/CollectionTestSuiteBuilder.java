@@ -30,9 +30,9 @@ import java.util.Set;
 import junit.framework.TestSuite;
 
 /**
- * Concrete instantiation of {@link AbstractCollectionTestSuiteBuilder} for
- * testing collections that do not have a more specific tester like
- * {@link ListTestSuiteBuilder} or {@link SetTestSuiteBuilder}.
+ * Concrete instantiation of {@link AbstractCollectionTestSuiteBuilder} for testing collections that
+ * do not have a more specific tester like {@link ListTestSuiteBuilder} or {@link
+ * SetTestSuiteBuilder}.
  *
  * @author Chris Povirk
  * @author Louis Wasserman
@@ -48,8 +48,7 @@ public class CollectionTestSuiteBuilder<E>
   protected List<TestSuite> createDerivedSuites(
       FeatureSpecificTestSuiteBuilder<?, ? extends OneSizeTestContainerGenerator<Collection<E>, E>>
           parentBuilder) {
-    List<TestSuite> derivedSuites =
-        new ArrayList<TestSuite>(super.createDerivedSuites(parentBuilder));
+    List<TestSuite> derivedSuites = new ArrayList<>(super.createDerivedSuites(parentBuilder));
 
     if (parentBuilder.getFeatures().contains(SERIALIZABLE)) {
       derivedSuites.add(
@@ -92,8 +91,7 @@ public class CollectionTestSuiteBuilder<E>
   }
 
   private static Set<Feature<?>> computeReserializedCollectionFeatures(Set<Feature<?>> features) {
-    Set<Feature<?>> derivedFeatures = new HashSet<Feature<?>>();
-    derivedFeatures.addAll(features);
+    Set<Feature<?>> derivedFeatures = new HashSet<>(features);
     derivedFeatures.remove(SERIALIZABLE);
     derivedFeatures.remove(SERIALIZABLE_INCLUDING_VIEWS);
     return derivedFeatures;

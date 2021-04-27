@@ -16,8 +16,10 @@ package com.google.common.primitives;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkPositionIndexes;
 
 import com.google.common.annotations.GwtCompatible;
+import java.util.Arrays;
 import java.util.Comparator;
 
 /**
@@ -25,8 +27,8 @@ import java.util.Comparator;
  * corresponding methods that treat the values as unsigned are found in {@link UnsignedBytes}, and
  * the methods for which signedness is not an issue are in {@link Bytes}.
  *
- * <p>See the Guava User Guide article on
- * <a href="https://github.com/google/guava/wiki/PrimitivesExplained">primitive utilities</a>.
+ * <p>See the Guava User Guide article on <a
+ * href="https://github.com/google/guava/wiki/PrimitivesExplained">primitive utilities</a>.
  *
  * @author Kevin Bourrillion
  * @since 1.0
@@ -34,6 +36,7 @@ import java.util.Comparator;
 // TODO(kevinb): how to prevent warning on UnsignedBytes when building GWT
 // javadoc?
 @GwtCompatible
+@ElementTypesAreNonnullByDefault
 public final class SignedBytes {
   private SignedBytes() {}
 
@@ -162,8 +165,8 @@ public final class SignedBytes {
    * signed.
    *
    * <p>The returned comparator is inconsistent with {@link Object#equals(Object)} (since arrays
-   * support only identity equality), but it is consistent with
-   * {@link java.util.Arrays#equals(byte[], byte[])}.
+   * support only identity equality), but it is consistent with {@link
+   * java.util.Arrays#equals(byte[], byte[])}.
    *
    * @since 2.0
    */
@@ -190,5 +193,28 @@ public final class SignedBytes {
     public String toString() {
       return "SignedBytes.lexicographicalComparator()";
     }
+  }
+
+  /**
+   * Sorts the elements of {@code array} in descending order.
+   *
+   * @since 23.1
+   */
+  public static void sortDescending(byte[] array) {
+    checkNotNull(array);
+    sortDescending(array, 0, array.length);
+  }
+
+  /**
+   * Sorts the elements of {@code array} between {@code fromIndex} inclusive and {@code toIndex}
+   * exclusive in descending order.
+   *
+   * @since 23.1
+   */
+  public static void sortDescending(byte[] array, int fromIndex, int toIndex) {
+    checkNotNull(array);
+    checkPositionIndexes(fromIndex, toIndex, array.length);
+    Arrays.sort(array, fromIndex, toIndex);
+    Bytes.reverse(array, fromIndex, toIndex);
   }
 }

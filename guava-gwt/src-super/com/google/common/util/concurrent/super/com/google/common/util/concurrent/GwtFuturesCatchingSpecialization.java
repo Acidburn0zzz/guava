@@ -15,7 +15,6 @@
 package com.google.common.util.concurrent;
 
 import com.google.common.base.Function;
-
 import java.util.concurrent.Executor;
 
 /**
@@ -33,23 +32,9 @@ abstract class GwtFuturesCatchingSpecialization {
   public static <V> ListenableFuture<V> catching(
       ListenableFuture<? extends V> input,
       Class<Throwable> exceptionType,
-      Function<? super Throwable, ? extends V> fallback) {
-    return AbstractCatchingFuture.create(input, exceptionType, fallback);
-  }
-
-  public static <V> ListenableFuture<V> catching(
-      ListenableFuture<? extends V> input,
-      Class<Throwable> exceptionType,
       Function<? super Throwable, ? extends V> fallback,
       Executor executor) {
     return AbstractCatchingFuture.create(input, exceptionType, fallback, executor);
-  }
-
-  public static <V> ListenableFuture<V> catchingAsync(
-      ListenableFuture<? extends V> input,
-      Class<Throwable> exceptionType,
-      AsyncFunction<? super Throwable, ? extends V> fallback) {
-    return AbstractCatchingFuture.create(input, exceptionType, fallback);
   }
 
   public static <V> ListenableFuture<V> catchingAsync(

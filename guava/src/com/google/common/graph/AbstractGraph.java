@@ -16,10 +16,8 @@
 
 package com.google.common.graph;
 
-import static com.google.common.graph.GraphConstants.GRAPH_STRING_FORMAT;
-
 import com.google.common.annotations.Beta;
-import javax.annotation.Nullable;
+import javax.annotation.CheckForNull;
 
 /**
  * This class provides a skeletal implementation of {@link Graph}. It is recommended to extend this
@@ -30,10 +28,11 @@ import javax.annotation.Nullable;
  * @since 20.0
  */
 @Beta
+@ElementTypesAreNonnullByDefault
 public abstract class AbstractGraph<N> extends AbstractBaseGraph<N> implements Graph<N> {
 
   @Override
-  public final boolean equals(@Nullable Object obj) {
+  public final boolean equals(@CheckForNull Object obj) {
     if (obj == this) {
       return true;
     }
@@ -55,8 +54,13 @@ public abstract class AbstractGraph<N> extends AbstractBaseGraph<N> implements G
   /** Returns a string representation of this graph. */
   @Override
   public String toString() {
-    String propertiesString =
-        String.format("isDirected: %s, allowsSelfLoops: %s", isDirected(), allowsSelfLoops());
-    return String.format(GRAPH_STRING_FORMAT, propertiesString, nodes(), edges());
+    return "isDirected: "
+        + isDirected()
+        + ", allowsSelfLoops: "
+        + allowsSelfLoops()
+        + ", nodes: "
+        + nodes()
+        + ", edges: "
+        + edges();
   }
 }

@@ -20,7 +20,7 @@ import com.google.common.annotations.GwtCompatible;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * A container class for the five sample elements we need for testing.
@@ -88,9 +88,9 @@ public class SampleElements<E> implements Iterable<E> {
     }
   }
 
-  public static <K, V> SampleElements<Map.Entry<K, V>> mapEntries(
+  public static <K, V> SampleElements<Entry<K, V>> mapEntries(
       SampleElements<K> keys, SampleElements<V> values) {
-    return new SampleElements<Map.Entry<K, V>>(
+    return new SampleElements<>(
         Helpers.mapEntry(keys.e0(), values.e0()),
         Helpers.mapEntry(keys.e1(), values.e1()),
         Helpers.mapEntry(keys.e2(), values.e2()),

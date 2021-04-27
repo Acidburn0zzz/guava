@@ -29,12 +29,13 @@ import java.util.TreeSet;
 
 /**
  * Provides supporting data for performance notes in the documentation of {@link
- * Ordering#sortedCopy} and {@link Ordering#immutableSortedCopy}, as well as for
- * automated code suggestions.
+ * Ordering#sortedCopy} and {@link Ordering#immutableSortedCopy}, as well as for automated code
+ * suggestions.
  *
  */
 public class SortedCopyBenchmark {
-  @Param({"1", "10", "1000", "1000000"}) int size; // logarithmic triangular
+  @Param({"1", "10", "1000", "1000000"})
+  int size; // logarithmic triangular
 
   @Param boolean mutable;
 
@@ -42,12 +43,14 @@ public class SortedCopyBenchmark {
 
   enum InputOrder {
     SORTED {
-      @Override void arrange(List<Integer> list) {
+      @Override
+      void arrange(List<Integer> list) {
         Collections.sort(list);
       }
     },
     ALMOST_SORTED {
-      @Override void arrange(List<Integer> list) {
+      @Override
+      void arrange(List<Integer> list) {
         Collections.sort(list);
         if (list.size() > 1) {
           int i = (list.size() - 1) / 2;
@@ -56,7 +59,8 @@ public class SortedCopyBenchmark {
       }
     },
     RANDOM {
-      @Override void arrange(List<Integer> list) {}
+      @Override
+      void arrange(List<Integer> list) {}
     };
 
     abstract void arrange(List<Integer> list);
@@ -67,13 +71,13 @@ public class SortedCopyBenchmark {
   @BeforeExperiment
   void setUp() {
     checkArgument(size > 0, "empty collection not supported");
-    Set<Integer> set = new LinkedHashSet<Integer>(size);
+    Set<Integer> set = new LinkedHashSet<>(size);
 
     Random random = new Random();
     while (set.size() < size) {
       set.add(random.nextInt());
     }
-    List<Integer> list = new ArrayList<Integer>(set);
+    List<Integer> list = new ArrayList<>(set);
     inputOrder.arrange(list);
     input = ImmutableList.copyOf(list);
   }
@@ -84,13 +88,13 @@ public class SortedCopyBenchmark {
     // Yes, this could be done more elegantly
     if (mutable) {
       for (int i = 0; i < reps; i++) {
-        List<Integer> copy = new ArrayList<Integer>(input);
+        List<Integer> copy = new ArrayList<>(input);
         Collections.sort(copy);
         dummy += copy.get(0);
       }
     } else {
       for (int i = 0; i < reps; i++) {
-        List<Integer> copy = new ArrayList<Integer>(input);
+        List<Integer> copy = new ArrayList<>(input);
         Collections.sort(copy);
         dummy += ImmutableList.copyOf(copy).get(0);
       }

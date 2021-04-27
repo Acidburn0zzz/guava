@@ -18,21 +18,22 @@ package com.google.common.graph;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.graph.GraphConstants.NODE_NOT_IN_GRAPH;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.annotations.Beta;
+import com.google.common.base.Function;
 import com.google.common.base.Objects;
-import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.util.ArrayDeque;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import javax.annotation.Nullable;
+import javax.annotation.CheckForNull;
 
 /**
  * Static utility methods for {@link Graph}, {@link ValueGraph}, and {@link Network} instances.
@@ -42,6 +43,7 @@ import javax.annotation.Nullable;
  * @since 20.0
  */
 @Beta
+@ElementTypesAreNonnullByDefault
 public final class Graphs {
 
   private Graphs() {}
@@ -98,7 +100,10 @@ public final class Graphs {
    * cycle in the graph.
    */
   private static <N> boolean subgraphHasCycle(
-      Graph<N> graph, Map<Object, NodeVisitState> visitedNodes, N node, @Nullable N previousNode) {
+      Graph<N> graph,
+      Map<Object, NodeVisitState> visitedNodes,
+      N node,
+      @CheckForNull N previousNode) {
     NodeVisitState state = visitedNodes.get(node);
     if (state == NodeVisitState.COMPLETE) {
       return false;
@@ -125,7 +130,7 @@ public final class Graphs {
    * from B to A).
    */
   private static boolean canTraverseWithoutReusingEdge(
-      Graph<?> graph, Object nextNode, @Nullable Object previousNode) {
+      Graph<?> graph, Object nextNode, @CheckForNull Object previousNode) {
     if (graph.isDirected() || !Objects.equal(previousNode, nextNode)) {
       return true;
     }
@@ -190,51 +195,7 @@ public final class Graphs {
    */
   public static <N> Set<N> reachableNodes(Graph<N> graph, N node) {
     checkArgument(graph.nodes().contains(node), NODE_NOT_IN_GRAPH, node);
-    Set<N> visitedNodes = new LinkedHashSet<N>();
-    Queue<N> queuedNodes = new ArrayDeque<N>();
-    visitedNodes.add(node);
-    queuedNodes.add(node);
-    // Perform a breadth-first traversal rooted at the input node.
-    while (!queuedNodes.isEmpty()) {
-      N currentNode = queuedNodes.remove();
-      for (N successor : graph.successors(currentNode)) {
-        if (visitedNodes.add(successor)) {
-          queuedNodes.add(successor);
-        }
-      }
-    }
-    return Collections.unmodifiableSet(visitedNodes);
-  }
-
-  /**
-   * @deprecated Use {@link Graph#equals(Object)} instead. This method will be removed in late 2017.
-   */
-  // TODO(user): Delete this method.
-  @Deprecated
-  public static boolean equivalent(@Nullable Graph<?> graphA, @Nullable Graph<?> graphB) {
-    return Objects.equal(graphA, graphB);
-  }
-
-  /**
-   * @deprecated Use {@link ValueGraph#equals(Object)} instead. This method will be removed in late
-   * 2017.
-   */
-  // TODO(user): Delete this method.
-  @Deprecated
-  public static boolean equivalent(
-      @Nullable ValueGraph<?, ?> graphA, @Nullable ValueGraph<?, ?> graphB) {
-    return Objects.equal(graphA, graphB);
-  }
-
-  /**
-   * @deprecated Use {@link Network#equals(Object)} instead. This method will be removed in late
-   * 2017.
-   */
-  // TODO(user): Delete this method.
-  @Deprecated
-  public static boolean equivalent(
-      @Nullable Network<?, ?> networkA, @Nullable Network<?, ?> networkB) {
-    return Objects.equal(networkA, networkB);
+    return ImmutableSet.copyOf(Traverser.forGraph(graph).breadthFirst(node));
   }
 
   // Graph mutation methods
@@ -257,58 +218,6 @@ public final class Graphs {
     return new TransposedGraph<N>(graph);
   }
 
-  private static class TransposedGraph<N> extends AbstractGraph<N> {
-    private final Graph<N> graph;
-
-    TransposedGraph(Graph<N> graph) {
-      this.graph = graph;
-    }
-
-    @Override
-    public Set<N> nodes() {
-      return graph.nodes();
-    }
-
-    /**
-     * Defer to {@link AbstractGraph#edges()} (based on {@link #successors(Object)}) for full
-     * edges() implementation.
-     */
-    @Override
-    protected long edgeCount() {
-      return graph.edges().size();
-    }
-
-    @Override
-    public boolean isDirected() {
-      return graph.isDirected();
-    }
-
-    @Override
-    public boolean allowsSelfLoops() {
-      return graph.allowsSelfLoops();
-    }
-
-    @Override
-    public ElementOrder<N> nodeOrder() {
-      return graph.nodeOrder();
-    }
-
-    @Override
-    public Set<N> adjacentNodes(N node) {
-      return graph.adjacentNodes(node);
-    }
-
-    @Override
-    public Set<N> predecessors(N node) {
-      return graph.successors(node); // transpose
-    }
-
-    @Override
-    public Set<N> successors(N node) {
-      return graph.predecessors(node); // transpose
-    }
-  }
-
   /**
    * Returns a view of {@code graph} with the direction (if any) of every edge reversed. All other
    * properties remain intact, and further updates to {@code graph} will be reflected in the view.
@@ -322,69 +231,7 @@ public final class Graphs {
       return ((TransposedValueGraph<N, V>) graph).graph;
     }
 
-    return new TransposedValueGraph<N, V>(graph);
-  }
-
-  private static class TransposedValueGraph<N, V> extends AbstractValueGraph<N, V> {
-    private final ValueGraph<N, V> graph;
-
-    TransposedValueGraph(ValueGraph<N, V> graph) {
-      this.graph = graph;
-    }
-
-    @Override
-    public Set<N> nodes() {
-      return graph.nodes();
-    }
-
-    /**
-     * Defer to {@link AbstractGraph#edges()} (based on {@link #successors(Object)}) for full
-     * edges() implementation.
-     */
-    @Override
-    protected long edgeCount() {
-      return graph.edges().size();
-    }
-
-    @Override
-    public boolean isDirected() {
-      return graph.isDirected();
-    }
-
-    @Override
-    public boolean allowsSelfLoops() {
-      return graph.allowsSelfLoops();
-    }
-
-    @Override
-    public ElementOrder<N> nodeOrder() {
-      return graph.nodeOrder();
-    }
-
-    @Override
-    public Set<N> adjacentNodes(N node) {
-      return graph.adjacentNodes(node);
-    }
-
-    @Override
-    public Set<N> predecessors(N node) {
-      return graph.successors(node); // transpose
-    }
-
-    @Override
-    public Set<N> successors(N node) {
-      return graph.predecessors(node); // transpose
-    }
-
-    @Override
-    public V edgeValue(N nodeU, N nodeV) {
-      return graph.edgeValue(nodeV, nodeU); // transpose
-    }
-
-    @Override
-    public V edgeValueOrDefault(N nodeU, N nodeV, @Nullable V defaultValue) {
-      return graph.edgeValueOrDefault(nodeV, nodeU, defaultValue); // transpose
-    }
+    return new TransposedValueGraph<>(graph);
   }
 
   /**
@@ -400,10 +247,136 @@ public final class Graphs {
       return ((TransposedNetwork<N, E>) network).network;
     }
 
-    return new TransposedNetwork<N, E>(network);
+    return new TransposedNetwork<>(network);
   }
 
-  private static class TransposedNetwork<N, E> extends AbstractNetwork<N, E> {
+  static <N> EndpointPair<N> transpose(EndpointPair<N> endpoints) {
+    if (endpoints.isOrdered()) {
+      return EndpointPair.ordered(endpoints.target(), endpoints.source());
+    }
+    return endpoints;
+  }
+
+  // NOTE: this should work as long as the delegate graph's implementation of edges() (like that of
+  // AbstractGraph) derives its behavior from calling successors().
+  private static class TransposedGraph<N> extends ForwardingGraph<N> {
+    private final Graph<N> graph;
+
+    TransposedGraph(Graph<N> graph) {
+      this.graph = graph;
+    }
+
+    @Override
+    Graph<N> delegate() {
+      return graph;
+    }
+
+    @Override
+    public Set<N> predecessors(N node) {
+      return delegate().successors(node); // transpose
+    }
+
+    @Override
+    public Set<N> successors(N node) {
+      return delegate().predecessors(node); // transpose
+    }
+
+    @Override
+    public Set<EndpointPair<N>> incidentEdges(N node) {
+      return new IncidentEdgeSet<N>(this, node) {
+        @Override
+        public Iterator<EndpointPair<N>> iterator() {
+          return Iterators.transform(
+              delegate().incidentEdges(node).iterator(),
+              new Function<EndpointPair<N>, EndpointPair<N>>() {
+                @Override
+                public EndpointPair<N> apply(EndpointPair<N> edge) {
+                  return EndpointPair.of(delegate(), edge.nodeV(), edge.nodeU());
+                }
+              });
+        }
+      };
+    }
+
+    @Override
+    public int inDegree(N node) {
+      return delegate().outDegree(node); // transpose
+    }
+
+    @Override
+    public int outDegree(N node) {
+      return delegate().inDegree(node); // transpose
+    }
+
+    @Override
+    public boolean hasEdgeConnecting(N nodeU, N nodeV) {
+      return delegate().hasEdgeConnecting(nodeV, nodeU); // transpose
+    }
+
+    @Override
+    public boolean hasEdgeConnecting(EndpointPair<N> endpoints) {
+      return delegate().hasEdgeConnecting(transpose(endpoints));
+    }
+  }
+
+  // NOTE: this should work as long as the delegate graph's implementation of edges() (like that of
+  // AbstractValueGraph) derives its behavior from calling successors().
+  private static class TransposedValueGraph<N, V> extends ForwardingValueGraph<N, V> {
+    private final ValueGraph<N, V> graph;
+
+    TransposedValueGraph(ValueGraph<N, V> graph) {
+      this.graph = graph;
+    }
+
+    @Override
+    ValueGraph<N, V> delegate() {
+      return graph;
+    }
+
+    @Override
+    public Set<N> predecessors(N node) {
+      return delegate().successors(node); // transpose
+    }
+
+    @Override
+    public Set<N> successors(N node) {
+      return delegate().predecessors(node); // transpose
+    }
+
+    @Override
+    public int inDegree(N node) {
+      return delegate().outDegree(node); // transpose
+    }
+
+    @Override
+    public int outDegree(N node) {
+      return delegate().inDegree(node); // transpose
+    }
+
+    @Override
+    public boolean hasEdgeConnecting(N nodeU, N nodeV) {
+      return delegate().hasEdgeConnecting(nodeV, nodeU); // transpose
+    }
+
+    @Override
+    public boolean hasEdgeConnecting(EndpointPair<N> endpoints) {
+      return delegate().hasEdgeConnecting(transpose(endpoints));
+    }
+
+    @Override
+    @CheckForNull
+    public V edgeValueOrDefault(N nodeU, N nodeV, @CheckForNull V defaultValue) {
+      return delegate().edgeValueOrDefault(nodeV, nodeU, defaultValue); // transpose
+    }
+
+    @Override
+    @CheckForNull
+    public V edgeValueOrDefault(EndpointPair<N> endpoints, @CheckForNull V defaultValue) {
+      return delegate().edgeValueOrDefault(transpose(endpoints), defaultValue);
+    }
+  }
+
+  private static class TransposedNetwork<N, E> extends ForwardingNetwork<N, E> {
     private final Network<N, E> network;
 
     TransposedNetwork(Network<N, E> network) {
@@ -411,89 +384,76 @@ public final class Graphs {
     }
 
     @Override
-    public Set<N> nodes() {
-      return network.nodes();
-    }
-
-    @Override
-    public Set<E> edges() {
-      return network.edges();
-    }
-
-    @Override
-    public boolean isDirected() {
-      return network.isDirected();
-    }
-
-    @Override
-    public boolean allowsParallelEdges() {
-      return network.allowsParallelEdges();
-    }
-
-    @Override
-    public boolean allowsSelfLoops() {
-      return network.allowsSelfLoops();
-    }
-
-    @Override
-    public ElementOrder<N> nodeOrder() {
-      return network.nodeOrder();
-    }
-
-    @Override
-    public ElementOrder<E> edgeOrder() {
-      return network.edgeOrder();
-    }
-
-    @Override
-    public Set<N> adjacentNodes(N node) {
-      return network.adjacentNodes(node);
+    Network<N, E> delegate() {
+      return network;
     }
 
     @Override
     public Set<N> predecessors(N node) {
-      return network.successors(node); // transpose
+      return delegate().successors(node); // transpose
     }
 
     @Override
     public Set<N> successors(N node) {
-      return network.predecessors(node); // transpose
+      return delegate().predecessors(node); // transpose
     }
 
     @Override
-    public Set<E> incidentEdges(N node) {
-      return network.incidentEdges(node);
+    public int inDegree(N node) {
+      return delegate().outDegree(node); // transpose
+    }
+
+    @Override
+    public int outDegree(N node) {
+      return delegate().inDegree(node); // transpose
     }
 
     @Override
     public Set<E> inEdges(N node) {
-      return network.outEdges(node); // transpose
+      return delegate().outEdges(node); // transpose
     }
 
     @Override
     public Set<E> outEdges(N node) {
-      return network.inEdges(node); // transpose
+      return delegate().inEdges(node); // transpose
     }
 
     @Override
     public EndpointPair<N> incidentNodes(E edge) {
-      EndpointPair<N> endpointPair = network.incidentNodes(edge);
+      EndpointPair<N> endpointPair = delegate().incidentNodes(edge);
       return EndpointPair.of(network, endpointPair.nodeV(), endpointPair.nodeU()); // transpose
     }
 
     @Override
-    public Set<E> adjacentEdges(E edge) {
-      return network.adjacentEdges(edge);
-    }
-
-    @Override
     public Set<E> edgesConnecting(N nodeU, N nodeV) {
-      return network.edgesConnecting(nodeV, nodeU); // transpose
+      return delegate().edgesConnecting(nodeV, nodeU); // transpose
     }
 
     @Override
-    public Optional<E> edgeConnecting(N nodeU, N nodeV) {
-      return network.edgeConnecting(nodeV, nodeU); // transpose
+    public Set<E> edgesConnecting(EndpointPair<N> endpoints) {
+      return delegate().edgesConnecting(transpose(endpoints));
+    }
+
+    @Override
+    @CheckForNull
+    public E edgeConnectingOrNull(N nodeU, N nodeV) {
+      return delegate().edgeConnectingOrNull(nodeV, nodeU); // transpose
+    }
+
+    @Override
+    @CheckForNull
+    public E edgeConnectingOrNull(EndpointPair<N> endpoints) {
+      return delegate().edgeConnectingOrNull(transpose(endpoints));
+    }
+
+    @Override
+    public boolean hasEdgeConnecting(N nodeU, N nodeV) {
+      return delegate().hasEdgeConnecting(nodeV, nodeU); // transpose
+    }
+
+    @Override
+    public boolean hasEdgeConnecting(EndpointPair<N> endpoints) {
+      return delegate().hasEdgeConnecting(transpose(endpoints));
     }
   }
 
@@ -507,7 +467,10 @@ public final class Graphs {
    * @throws IllegalArgumentException if any element in {@code nodes} is not a node in the graph
    */
   public static <N> MutableGraph<N> inducedSubgraph(Graph<N> graph, Iterable<? extends N> nodes) {
-    MutableGraph<N> subgraph = GraphBuilder.from(graph).build();
+    MutableGraph<N> subgraph =
+        (nodes instanceof Collection)
+            ? GraphBuilder.from(graph).expectedNodeCount(((Collection) nodes).size()).build()
+            : GraphBuilder.from(graph).build();
     for (N node : nodes) {
       subgraph.addNode(node);
     }
@@ -531,14 +494,21 @@ public final class Graphs {
    */
   public static <N, V> MutableValueGraph<N, V> inducedSubgraph(
       ValueGraph<N, V> graph, Iterable<? extends N> nodes) {
-    MutableValueGraph<N, V> subgraph = ValueGraphBuilder.from(graph).build();
+    MutableValueGraph<N, V> subgraph =
+        (nodes instanceof Collection)
+            ? ValueGraphBuilder.from(graph).expectedNodeCount(((Collection) nodes).size()).build()
+            : ValueGraphBuilder.from(graph).build();
     for (N node : nodes) {
       subgraph.addNode(node);
     }
     for (N node : subgraph.nodes()) {
       for (N successorNode : graph.successors(node)) {
         if (subgraph.nodes().contains(successorNode)) {
-          subgraph.putEdgeValue(node, successorNode, graph.edgeValue(node, successorNode));
+          // requireNonNull is safe because the endpoint pair comes from the graph.
+          subgraph.putEdgeValue(
+              node,
+              successorNode,
+              requireNonNull(graph.edgeValueOrDefault(node, successorNode, null)));
         }
       }
     }
@@ -555,7 +525,10 @@ public final class Graphs {
    */
   public static <N, E> MutableNetwork<N, E> inducedSubgraph(
       Network<N, E> network, Iterable<? extends N> nodes) {
-    MutableNetwork<N, E> subgraph = NetworkBuilder.from(network).build();
+    MutableNetwork<N, E> subgraph =
+        (nodes instanceof Collection)
+            ? NetworkBuilder.from(network).expectedNodeCount(((Collection) nodes).size()).build()
+            : NetworkBuilder.from(network).build();
     for (N node : nodes) {
       subgraph.addNode(node);
     }
@@ -590,7 +563,11 @@ public final class Graphs {
       copy.addNode(node);
     }
     for (EndpointPair<N> edge : graph.edges()) {
-      copy.putEdgeValue(edge.nodeU(), edge.nodeV(), graph.edgeValue(edge.nodeU(), edge.nodeV()));
+      // requireNonNull is safe because the endpoint pair comes from the graph.
+      copy.putEdgeValue(
+          edge.nodeU(),
+          edge.nodeV(),
+          requireNonNull(graph.edgeValueOrDefault(edge.nodeU(), edge.nodeV(), null)));
     }
     return copy;
   }
@@ -619,14 +596,14 @@ public final class Graphs {
   }
 
   @CanIgnoreReturnValue
-  static int checkPositive(int value) {
-    checkArgument(value > 0, "Not true that %s is positive.", value);
+  static long checkNonNegative(long value) {
+    checkArgument(value >= 0, "Not true that %s is non-negative.", value);
     return value;
   }
 
   @CanIgnoreReturnValue
-  static long checkNonNegative(long value) {
-    checkArgument(value >= 0, "Not true that %s is non-negative.", value);
+  static int checkPositive(int value) {
+    checkArgument(value > 0, "Not true that %s is positive.", value);
     return value;
   }
 

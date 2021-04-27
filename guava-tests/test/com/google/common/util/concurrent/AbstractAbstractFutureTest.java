@@ -29,7 +29,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
-import com.google.common.util.concurrent.AbstractFuture.TrustedFuture;
 import com.google.common.util.concurrent.AbstractFutureTest.TimedWaiterThread;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -110,35 +109,39 @@ abstract class AbstractAbstractFutureTest extends TestCase {
   }
 
   public void testSetFutureDelegateAlreadyCancelled() throws Exception {
-    delegate.cancel(false /** mayInterruptIfRunning */);
+    delegate.cancel(
+        false
+        /** mayInterruptIfRunning */
+        );
     assertThat(future.setFuture(delegate)).isTrue();
     assertCancelled(future, false);
   }
 
   public void testSetFutureDelegateLaterCancelled() throws Exception {
     assertThat(future.setFuture(delegate)).isTrue();
-    delegate.cancel(false /** mayInterruptIfRunning */);
+    delegate.cancel(
+        false
+        /** mayInterruptIfRunning */
+        );
     assertCancelled(future, false);
   }
 
-  @GwtIncompatible // All GWT Futures behaves like TrustedFuture.
   public void testSetFutureDelegateAlreadyInterrupted() throws Exception {
-    delegate.cancel(true /** mayInterruptIfRunning */);
+    delegate.cancel(
+        true
+        /** mayInterruptIfRunning */
+        );
     assertThat(future.setFuture(delegate)).isTrue();
-    /*
-     * Interruption of the delegate propagates to us only if the delegate was a TrustedFuture.
-     * TODO(cpovirk): Consider whether to stop copying this information from TrustedFuture so that
-     * we're consistent.
-     */
-    assertCancelled(future, delegate instanceof TrustedFuture);
+    assertCancelled(future, /* expectWasInterrupted= */ false);
   }
 
-  @GwtIncompatible // All GWT Futures behaves like TrustedFuture.
   public void testSetFutureDelegateLaterInterrupted() throws Exception {
     assertThat(future.setFuture(delegate)).isTrue();
-    delegate.cancel(true /** mayInterruptIfRunning */);
-    // See previous method doc.
-    assertCancelled(future, delegate instanceof TrustedFuture);
+    delegate.cancel(
+        true
+        /** mayInterruptIfRunning */
+        );
+    assertCancelled(future, /* expectWasInterrupted= */ false);
   }
 
   public void testListenLaterSuccessful() {
@@ -288,31 +291,31 @@ abstract class AbstractAbstractFutureTest extends TestCase {
   }
 
   public void testMisbehavingListenerAlreadyDone() {
-    class BadRunnableException extends RuntimeException {
-    }
+    class BadRunnableException extends RuntimeException {}
 
-    Runnable bad = new Runnable() {
-      @Override
-      public void run() {
-        throw new BadRunnableException();
-      }
-    };
+    Runnable bad =
+        new Runnable() {
+          @Override
+          public void run() {
+            throw new BadRunnableException();
+          }
+        };
 
     future.set(1);
     future.addListener(bad, directExecutor()); // BadRunnableException must not propagate.
   }
 
   public void testMisbehavingListenerLaterDone() {
-    class BadRunnableException extends RuntimeException {
-    }
+    class BadRunnableException extends RuntimeException {}
 
     CountingRunnable before = new CountingRunnable();
-    Runnable bad = new Runnable() {
-      @Override
-      public void run() {
-        throw new BadRunnableException();
-      }
-    };
+    Runnable bad =
+        new Runnable() {
+          @Override
+          public void run() {
+            throw new BadRunnableException();
+          }
+        };
     CountingRunnable after = new CountingRunnable();
 
     future.addListener(before, directExecutor());
@@ -400,9 +403,7 @@ abstract class AbstractAbstractFutureTest extends TestCase {
     assertSuccessful(future, 1);
   }
 
-  /**
-   * Concrete subclass for testing.
-   */
+  /** Concrete subclass for testing. */
   private static class TestedFuture<V> extends AbstractFuture<V> {
     private static <V> TestedFuture<V> create() {
       return new TestedFuture<V>();
@@ -461,14 +462,14 @@ abstract class AbstractAbstractFutureTest extends TestCase {
       getDone(future);
       fail();
     } catch (ExecutionException e) {
-      assertThat(e.getCause()).isSameAs(expectedException);
+      assertThat(e.getCause()).isSameInstanceAs(expectedException);
     }
 
     try {
       getDoneFromTimeoutOverload(future);
       fail();
     } catch (ExecutionException e) {
-      assertThat(e.getCause()).isSameAs(expectedException);
+      assertThat(e).hasCauseThat().isSameInstanceAs(expectedException);
     }
   }
 

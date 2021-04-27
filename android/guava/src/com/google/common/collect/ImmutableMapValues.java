@@ -18,10 +18,9 @@ package com.google.common.collect;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
-import com.google.j2objc.annotations.Weak;
 import java.io.Serializable;
 import java.util.Map.Entry;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * {@code values()} implementation for {@link ImmutableMap}.
@@ -31,7 +30,7 @@ import javax.annotation.Nullable;
  */
 @GwtCompatible(emulated = true)
 final class ImmutableMapValues<K, V> extends ImmutableCollection<V> {
-  @Weak private final ImmutableMap<K, V> map;
+  private final ImmutableMap<K, V> map;
 
   ImmutableMapValues(ImmutableMap<K, V> map) {
     this.map = map;
@@ -60,7 +59,7 @@ final class ImmutableMapValues<K, V> extends ImmutableCollection<V> {
   }
 
   @Override
-  public boolean contains(@Nullable Object object) {
+  public boolean contains(@NullableDecl Object object) {
     return object != null && Iterators.contains(iterator(), object);
   }
 

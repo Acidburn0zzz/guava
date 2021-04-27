@@ -18,14 +18,13 @@ package com.google.common.collect;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.annotations.Beta;
 import com.google.common.annotations.GwtCompatible;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collector;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Collectors not present in {@code java.util.stream.Collectors} that are not otherwise associated
@@ -34,7 +33,6 @@ import javax.annotation.Nullable;
  * @author Louis Wasserman
  * @since 21.0
  */
-@Beta
 @GwtCompatible
 public final class MoreCollectors {
 
@@ -60,7 +58,7 @@ public final class MoreCollectors {
   public static <T> Collector<T, ?, Optional<T>> toOptional() {
     return (Collector) TO_OPTIONAL;
   }
-  
+
   private static final Object NULL_PLACEHOLDER = new Object();
 
   private static final Collector<Object, ?, Object> ONLY_ELEMENT =

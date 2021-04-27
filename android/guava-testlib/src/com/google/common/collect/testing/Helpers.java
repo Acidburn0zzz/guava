@@ -169,8 +169,7 @@ public class Helpers {
   }
 
   public static void assertContainsAllOf(Iterable<?> actual, Object... expected) {
-    List<Object> expectedList = new ArrayList<Object>();
-    expectedList.addAll(Arrays.asList(expected));
+    List<Object> expectedList = new ArrayList<>(Arrays.asList(expected));
 
     for (Object o : actual) {
       expectedList.remove(o);
@@ -339,13 +338,12 @@ public class Helpers {
   }
 
   /**
-   * Returns a collection that simulates concurrent modification by
-   * having its size method return incorrect values.  This is useful
-   * for testing methods that must treat the return value from size()
-   * as a hint only.
+   * Returns a collection that simulates concurrent modification by having its size method return
+   * incorrect values. This is useful for testing methods that must treat the return value from
+   * size() as a hint only.
    *
-   * @param delta the difference between the true size of the
-   * collection and the values returned by the size method
+   * @param delta the difference between the true size of the collection and the values returned by
+   *     the size method
    */
   public static <T> Collection<T> misleadingSizeCollection(final int delta) {
     // It would be nice to be able to return a real concurrent
@@ -360,15 +358,13 @@ public class Helpers {
   }
 
   /**
-   * Returns a "nefarious" map entry with the specified key and value,
-   * meaning an entry that is suitable for testing that map entries cannot be
-   * modified via a nefarious implementation of equals. This is used for testing
-   * unmodifiable collections of map entries; for example, it should not be
-   * possible to access the raw (modifiable) map entry via a nefarious equals
-   * method.
+   * Returns a "nefarious" map entry with the specified key and value, meaning an entry that is
+   * suitable for testing that map entries cannot be modified via a nefarious implementation of
+   * equals. This is used for testing unmodifiable collections of map entries; for example, it
+   * should not be possible to access the raw (modifiable) map entry via a nefarious equals method.
    */
-  public static <K, V> Map.Entry<K, V> nefariousMapEntry(final K key, final V value) {
-    return new Map.Entry<K, V>() {
+  public static <K, V> Entry<K, V> nefariousMapEntry(final K key, final V value) {
+    return new Entry<K, V>() {
       @Override
       public K getKey() {
         return key;
@@ -387,8 +383,8 @@ public class Helpers {
       @SuppressWarnings("unchecked")
       @Override
       public boolean equals(Object o) {
-        if (o instanceof Map.Entry) {
-          Map.Entry<K, V> e = (Map.Entry<K, V>) o;
+        if (o instanceof Entry) {
+          Entry<K, V> e = (Entry<K, V>) o;
           e.setValue(value); // muhahaha!
 
           return equal(this.getKey(), e.getKey()) && equal(this.getValue(), e.getValue());

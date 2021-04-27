@@ -68,6 +68,53 @@ public class SetGenerators {
     }
   }
 
+  public static class ImmutableSetUnsizedBuilderGenerator extends TestStringSetGenerator {
+    @Override
+    protected Set<String> create(String[] elements) {
+      ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+      for (String e : elements) {
+        builder.add(e);
+      }
+      return builder.build();
+    }
+  }
+
+  public static class ImmutableSetSizedBuilderGenerator extends TestStringSetGenerator {
+    @Override
+    protected Set<String> create(String[] elements) {
+      ImmutableSet.Builder<String> builder =
+          ImmutableSet.builderWithExpectedSize(Sets.newHashSet(elements).size());
+      for (String e : elements) {
+        builder.add(e);
+      }
+      return builder.build();
+    }
+  }
+
+  public static class ImmutableSetTooBigBuilderGenerator extends TestStringSetGenerator {
+    @Override
+    protected Set<String> create(String[] elements) {
+      ImmutableSet.Builder<String> builder =
+          ImmutableSet.builderWithExpectedSize(Sets.newHashSet(elements).size() + 1);
+      for (String e : elements) {
+        builder.add(e);
+      }
+      return builder.build();
+    }
+  }
+
+  public static class ImmutableSetTooSmallBuilderGenerator extends TestStringSetGenerator {
+    @Override
+    protected Set<String> create(String[] elements) {
+      ImmutableSet.Builder<String> builder =
+          ImmutableSet.builderWithExpectedSize(Math.max(0, Sets.newHashSet(elements).size() - 1));
+      for (String e : elements) {
+        builder.add(e);
+      }
+      return builder.build();
+    }
+  }
+
   public static class ImmutableSetWithBadHashesGenerator extends TestCollidingSetGenerator
       // Work around a GWT compiler bug.  Not explicitly listing this will
       // cause the createArray() method missing in the generated javascript.
@@ -308,7 +355,7 @@ public class SetGenerators {
     @Override
     protected SortedSet<Integer> create(Integer[] elements) {
       SortedSet<Integer> set = nullCheckedTreeSet(elements);
-      int tooHigh = (set.isEmpty()) ? 0 : set.last() + 1;
+      int tooHigh = set.isEmpty() ? 0 : set.last() + 1;
       set.add(tooHigh);
       return checkedCreate(set).headSet(tooHigh);
     }
@@ -318,7 +365,7 @@ public class SetGenerators {
     @Override
     protected SortedSet<Integer> create(Integer[] elements) {
       SortedSet<Integer> set = nullCheckedTreeSet(elements);
-      int tooLow = (set.isEmpty()) ? 0 : set.first() - 1;
+      int tooLow = set.isEmpty() ? 0 : set.first() - 1;
       set.add(tooLow);
       return checkedCreate(set).tailSet(tooLow + 1);
     }
@@ -370,7 +417,7 @@ public class SetGenerators {
         assertEquals(elements.get(i) + 1, (int) elements.get(i + 1));
       }
       Range<Integer> range =
-          (elements.isEmpty()) ? Range.closedOpen(0, 0) : Range.encloseAll(elements);
+          elements.isEmpty() ? Range.closedOpen(0, 0) : Range.encloseAll(elements);
       return ContiguousSet.create(range, DiscreteDomain.integers());
     }
   }

@@ -9,7 +9,7 @@
  * Source:
  * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/src/jsr166e/extra/AtomicDouble.java?revision=1.13
  * (Modified to adapt to guava coding conventions and
- * to use AtomicLongFieldUpdater instead of sun.misc.Unsafe)
+ * to use AtomicLong instead of sun.misc.Unsafe)
  */
 
 package com.google.common.util.concurrent;
@@ -17,9 +17,8 @@ package com.google.common.util.concurrent;
 import static java.lang.Double.doubleToRawLongBits;
 import static java.lang.Double.longBitsToDouble;
 
-import com.google.common.annotations.GwtIncompatible;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A {@code double} value that may be updated atomically. See the {@link
@@ -28,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
  * cannot be used as a replacement for a {@link Double}. However, this class does extend {@code
  * Number} to allow uniform access by tools and utilities that deal with numerically-based classes.
  *
- * <p><a name="bitEquals"></a>This class compares primitive {@code double} values in methods such as
+ * <p><a id="bitEquals"></a>This class compares primitive {@code double} values in methods such as
  * {@link #compareAndSet} by comparing their bitwise representation using {@link
  * Double#doubleToRawLongBits}, which differs from both the primitive double {@code ==} operator and
  * from {@link Double#equals}, as if implemented by:
@@ -43,23 +42,18 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
  *
  * <p>It is possible to write a more scalable updater, at the cost of giving up strict atomicity.
  * See for example <a
- * href="http://gee.cs.oswego.edu/dl/jsr166/dist/jsr166edocs/jsr166e/DoubleAdder.html">
- * DoubleAdder</a> and <a
- * href="http://gee.cs.oswego.edu/dl/jsr166/dist/jsr166edocs/jsr166e/DoubleMaxUpdater.html">
- * DoubleMaxUpdater</a>.
+ * href="http://gee.cs.oswego.edu/dl/jsr166/dist/docs/java.base/java/util/concurrent/atomic/DoubleAdder.html">
+ * DoubleAdder</a>.
  *
  * @author Doug Lea
  * @author Martin Buchholz
  * @since 11.0
  */
-@GwtIncompatible
 public class AtomicDouble extends Number implements java.io.Serializable {
   private static final long serialVersionUID = 0L;
 
-  private transient volatile long value;
-
-  private static final AtomicLongFieldUpdater<AtomicDouble> updater =
-      AtomicLongFieldUpdater.newUpdater(AtomicDouble.class, "value");
+  // We would use AtomicLongFieldUpdater, but it has issues on some Android devices.
+  private transient AtomicLong value;
 
   /**
    * Creates a new {@code AtomicDouble} with the given initial value.
@@ -67,14 +61,12 @@ public class AtomicDouble extends Number implements java.io.Serializable {
    * @param initialValue the initial value
    */
   public AtomicDouble(double initialValue) {
-    value = doubleToRawLongBits(initialValue);
+    value = new AtomicLong(doubleToRawLongBits(initialValue));
   }
 
-  /**
-   * Creates a new {@code AtomicDouble} with initial value {@code 0.0}.
-   */
+  /** Creates a new {@code AtomicDouble} with initial value {@code 0.0}. */
   public AtomicDouble() {
-    // assert doubleToRawLongBits(0.0) == 0L;
+    this(0.0);
   }
 
   /**
@@ -83,7 +75,7 @@ public class AtomicDouble extends Number implements java.io.Serializable {
    * @return the current value
    */
   public final double get() {
-    return longBitsToDouble(value);
+    return longBitsToDouble(value.get());
   }
 
   /**
@@ -93,7 +85,7 @@ public class AtomicDouble extends Number implements java.io.Serializable {
    */
   public final void set(double newValue) {
     long next = doubleToRawLongBits(newValue);
-    value = next;
+    value.set(next);
   }
 
   /**
@@ -102,10 +94,8 @@ public class AtomicDouble extends Number implements java.io.Serializable {
    * @param newValue the new value
    */
   public final void lazySet(double newValue) {
-    set(newValue);
-    // TODO(user): replace with code below when jdk5 support is dropped.
-    // long next = doubleToRawLongBits(newValue);
-    // updater.lazySet(this, next);
+    long next = doubleToRawLongBits(newValue);
+    value.lazySet(next);
   }
 
   /**
@@ -116,44 +106,37 @@ public class AtomicDouble extends Number implements java.io.Serializable {
    */
   public final double getAndSet(double newValue) {
     long next = doubleToRawLongBits(newValue);
-    return longBitsToDouble(updater.getAndSet(this, next));
+    return longBitsToDouble(value.getAndSet(next));
   }
 
   /**
-   * Atomically sets the value to the given updated value
-   * if the current value is <a href="#bitEquals">bitwise equal</a>
-   * to the expected value.
+   * Atomically sets the value to the given updated value if the current value is <a
+   * href="#bitEquals">bitwise equal</a> to the expected value.
    *
    * @param expect the expected value
    * @param update the new value
-   * @return {@code true} if successful. False return indicates that
-   * the actual value was not bitwise equal to the expected value.
+   * @return {@code true} if successful. False return indicates that the actual value was not
+   *     bitwise equal to the expected value.
    */
   public final boolean compareAndSet(double expect, double update) {
-    return updater.compareAndSet(this,
-                                 doubleToRawLongBits(expect),
-                                 doubleToRawLongBits(update));
+    return value.compareAndSet(doubleToRawLongBits(expect), doubleToRawLongBits(update));
   }
 
   /**
-   * Atomically sets the value to the given updated value
-   * if the current value is <a href="#bitEquals">bitwise equal</a>
-   * to the expected value.
+   * Atomically sets the value to the given updated value if the current value is <a
+   * href="#bitEquals">bitwise equal</a> to the expected value.
    *
    * <p>May <a
    * href="http://download.oracle.com/javase/7/docs/api/java/util/concurrent/atomic/package-summary.html#Spurious">
-   * fail spuriously</a>
-   * and does not provide ordering guarantees, so is only rarely an
-   * appropriate alternative to {@code compareAndSet}.
+   * fail spuriously</a> and does not provide ordering guarantees, so is only rarely an appropriate
+   * alternative to {@code compareAndSet}.
    *
    * @param expect the expected value
    * @param update the new value
    * @return {@code true} if successful
    */
   public final boolean weakCompareAndSet(double expect, double update) {
-    return updater.weakCompareAndSet(this,
-                                     doubleToRawLongBits(expect),
-                                     doubleToRawLongBits(update));
+    return value.weakCompareAndSet(doubleToRawLongBits(expect), doubleToRawLongBits(update));
   }
 
   /**
@@ -165,11 +148,11 @@ public class AtomicDouble extends Number implements java.io.Serializable {
   @CanIgnoreReturnValue
   public final double getAndAdd(double delta) {
     while (true) {
-      long current = value;
+      long current = value.get();
       double currentVal = longBitsToDouble(current);
       double nextVal = currentVal + delta;
       long next = doubleToRawLongBits(nextVal);
-      if (updater.compareAndSet(this, current, next)) {
+      if (value.compareAndSet(current, next)) {
         return currentVal;
       }
     }
@@ -184,11 +167,11 @@ public class AtomicDouble extends Number implements java.io.Serializable {
   @CanIgnoreReturnValue
   public final double addAndGet(double delta) {
     while (true) {
-      long current = value;
+      long current = value.get();
       double currentVal = longBitsToDouble(current);
       double nextVal = currentVal + delta;
       long next = doubleToRawLongBits(nextVal);
-      if (updater.compareAndSet(this, current, next)) {
+      if (value.compareAndSet(current, next)) {
         return nextVal;
       }
     }
@@ -196,39 +179,43 @@ public class AtomicDouble extends Number implements java.io.Serializable {
 
   /**
    * Returns the String representation of the current value.
+   *
    * @return the String representation of the current value
    */
+  @Override
   public String toString() {
     return Double.toString(get());
   }
 
   /**
-   * Returns the value of this {@code AtomicDouble} as an {@code int}
-   * after a narrowing primitive conversion.
+   * Returns the value of this {@code AtomicDouble} as an {@code int} after a narrowing primitive
+   * conversion.
    */
+  @Override
   public int intValue() {
     return (int) get();
   }
 
   /**
-   * Returns the value of this {@code AtomicDouble} as a {@code long}
-   * after a narrowing primitive conversion.
+   * Returns the value of this {@code AtomicDouble} as a {@code long} after a narrowing primitive
+   * conversion.
    */
+  @Override
   public long longValue() {
     return (long) get();
   }
 
   /**
-   * Returns the value of this {@code AtomicDouble} as a {@code float}
-   * after a narrowing primitive conversion.
+   * Returns the value of this {@code AtomicDouble} as a {@code float} after a narrowing primitive
+   * conversion.
    */
+  @Override
   public float floatValue() {
     return (float) get();
   }
 
-  /**
-   * Returns the value of this {@code AtomicDouble} as a {@code double}.
-   */
+  /** Returns the value of this {@code AtomicDouble} as a {@code double}. */
+  @Override
   public double doubleValue() {
     return get();
   }
@@ -238,20 +225,17 @@ public class AtomicDouble extends Number implements java.io.Serializable {
    *
    * @serialData The current value is emitted (a {@code double}).
    */
-  private void writeObject(java.io.ObjectOutputStream s)
-      throws java.io.IOException {
+  private void writeObject(java.io.ObjectOutputStream s) throws java.io.IOException {
     s.defaultWriteObject();
 
     s.writeDouble(get());
   }
 
-  /**
-   * Reconstitutes the instance from a stream (that is, deserializes it).
-   */
+  /** Reconstitutes the instance from a stream (that is, deserializes it). */
   private void readObject(java.io.ObjectInputStream s)
       throws java.io.IOException, ClassNotFoundException {
     s.defaultReadObject();
-
+    value = new AtomicLong();
     set(s.readDouble());
   }
 }

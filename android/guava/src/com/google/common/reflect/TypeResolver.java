@@ -32,9 +32,10 @@ import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Nullable;
+import javax.annotation.CheckForNull;
 
 /**
  * An object of this class encapsulates type mappings from type variables. Mappings are established
@@ -51,6 +52,7 @@ import javax.annotation.Nullable;
  * @since 15.0
  */
 @Beta
+@ElementTypesAreNonnullByDefault
 public final class TypeResolver {
 
   private final TypeTable typeTable;
@@ -63,8 +65,31 @@ public final class TypeResolver {
     this.typeTable = typeTable;
   }
 
-  static TypeResolver accordingTo(Type type) {
-    return new TypeResolver().where(TypeMappingIntrospector.getTypeMappings(type));
+  /**
+   * Returns a resolver that resolves types "covariantly".
+   *
+   * <p>For example, when resolving {@code List<T>} in the context of {@code ArrayList<?>}, {@code
+   * <T>} is covariantly resolved to {@code <?>} such that return type of {@code List::get} is
+   * {@code <?>}.
+   */
+  static TypeResolver covariantly(Type contextType) {
+    return new TypeResolver().where(TypeMappingIntrospector.getTypeMappings(contextType));
+  }
+
+  /**
+   * Returns a resolver that resolves types "invariantly".
+   *
+   * <p>For example, when resolving {@code List<T>} in the context of {@code ArrayList<?>}, {@code
+   * <T>} cannot be invariantly resolved to {@code <?>} because otherwise the parameter type of
+   * {@code List::set} will be {@code <?>} and it'll falsely say any object can be passed into
+   * {@code ArrayList<?>::set}.
+   *
+   * <p>Instead, {@code <?>} will be resolved to a capture in the form of a type variable {@code
+   * <capture-of-? extends Object>}, effectively preventing {@code set} from accepting any type.
+   */
+  static TypeResolver invariantly(Type contextType) {
+    Type invariantContext = WildcardCapturer.INSTANCE.capture(contextType);
+    return new TypeResolver().where(TypeMappingIntrospector.getTypeMappings(invariantContext));
   }
 
   /**
@@ -72,12 +97,12 @@ public final class TypeResolver {
    * {@code actual}.
    *
    * <p>For example, if {@code formal} is a {@code TypeVariable T}, and {@code actual} is {@code
-   * String.class}, then {@code new TypeResolver().where(formal, actual)} will
-   * {@linkplain #resolveType resolve} {@code ParameterizedType List<T>} to {@code List<String>},
-   * and resolve {@code Map<T, Something>} to {@code Map<String, Something>} etc. Similarly,
-   * {@code formal} and {@code actual} can be {@code Map<K, V>} and {@code Map<String, Integer>}
-   * respectively, or they can be {@code E[]} and {@code String[]} respectively, or even any
-   * arbitrary combination thereof.
+   * String.class}, then {@code new TypeResolver().where(formal, actual)} will {@linkplain
+   * #resolveType resolve} {@code ParameterizedType List<T>} to {@code List<String>}, and resolve
+   * {@code Map<T, Something>} to {@code Map<String, Something>} etc. Similarly, {@code formal} and
+   * {@code actual} can be {@code Map<K, V>} and {@code Map<String, Integer>} respectively, or they
+   * can be {@code E[]} and {@code String[]} respectively, or even any arbitrary combination
+   * thereof.
    *
    * @param formal The type whose type variables or itself is mapped to other type(s). It's almost
    *     always a bug if {@code formal} isn't a type variable and contains no type variable. Make
@@ -98,7 +123,7 @@ public final class TypeResolver {
   }
 
   private static void populateTypeMappings(
-      final Map<TypeVariableKey, Type> mappings, Type from, final Type to) {
+      final Map<TypeVariableKey, Type> mappings, final Type from, final Type to) {
     if (from.equals(to)) {
       return;
     }
@@ -203,6 +228,13 @@ public final class TypeResolver {
     }
   }
 
+  Type[] resolveTypesInPlace(Type[] types) {
+    for (int i = 0; i < types.length; i++) {
+      types[i] = resolveType(types[i]);
+    }
+    return types;
+  }
+
   private Type[] resolveTypes(Type[] types) {
     Type[] result = new Type[types.length];
     for (int i = 0; i < types.length; i++) {
@@ -258,7 +290,7 @@ public final class TypeResolver {
     final TypeTable where(Map<TypeVariableKey, ? extends Type> mappings) {
       ImmutableMap.Builder<TypeVariableKey, Type> builder = ImmutableMap.builder();
       builder.putAll(map);
-      for (Map.Entry<TypeVariableKey, ? extends Type> mapping : mappings.entrySet()) {
+      for (Entry<TypeVariableKey, ? extends Type> mapping : mappings.entrySet()) {
         TypeVariableKey variable = mapping.getKey();
         Type type = mapping.getValue();
         checkArgument(!variable.equalsType(type), "Type variable %s bound to itself", variable);
@@ -340,8 +372,6 @@ public final class TypeResolver {
 
   private static final class TypeMappingIntrospector extends TypeVisitor {
 
-    private static final WildcardCapturer wildcardCapturer = new WildcardCapturer();
-
     private final Map<TypeVariableKey, Type> mappings = Maps.newHashMap();
 
     /**
@@ -349,8 +379,9 @@ public final class TypeResolver {
      * superclass and the super interfaces of {@code contextClass}.
      */
     static ImmutableMap<TypeVariableKey, Type> getTypeMappings(Type contextType) {
+      checkNotNull(contextType);
       TypeMappingIntrospector introspector = new TypeMappingIntrospector();
-      introspector.visit(wildcardCapturer.capture(contextType));
+      introspector.visit(contextType);
       return ImmutableMap.copyOf(introspector.mappings);
     }
 
@@ -416,9 +447,11 @@ public final class TypeResolver {
   // Instead, it should create a capture of the wildcard so that set() rejects any List<T>.
   private static class WildcardCapturer {
 
+    static final WildcardCapturer INSTANCE = new WildcardCapturer();
+
     private final AtomicInteger id;
 
-    WildcardCapturer() {
+    private WildcardCapturer() {
       this(new AtomicInteger());
     }
 
@@ -449,7 +482,8 @@ public final class TypeResolver {
         }
         return Types.newParameterizedTypeWithOwner(
             notForTypeVariable().captureNullable(parameterizedType.getOwnerType()),
-            rawType, typeArgs);
+            rawType,
+            typeArgs);
       }
       if (type instanceof WildcardType) {
         WildcardType wildcardType = (WildcardType) type;
@@ -465,17 +499,15 @@ public final class TypeResolver {
     }
 
     TypeVariable<?> captureAsTypeVariable(Type[] upperBounds) {
-          String name =
-              "capture#"
-                  + id.incrementAndGet()
-                  + "-of ? extends "
-                  + Joiner.on('&').join(upperBounds);
+      String name =
+          "capture#" + id.incrementAndGet() + "-of ? extends " + Joiner.on('&').join(upperBounds);
       return Types.newArtificialTypeVariable(WildcardCapturer.class, name, upperBounds);
     }
 
     private WildcardCapturer forTypeVariable(final TypeVariable<?> typeParam) {
       return new WildcardCapturer(id) {
-        @Override TypeVariable<?> captureAsTypeVariable(Type[] upperBounds) {
+        @Override
+        TypeVariable<?> captureAsTypeVariable(Type[] upperBounds) {
           Set<Type> combined = new LinkedHashSet<>(asList(upperBounds));
           // Since this is an artifically generated type variable, we don't bother checking
           // subtyping between declared type bound and actual type bound. So it's possible that we
@@ -496,7 +528,8 @@ public final class TypeResolver {
       return new WildcardCapturer(id);
     }
 
-    private Type captureNullable(@Nullable Type type) {
+    @CheckForNull
+    private Type captureNullable(@CheckForNull Type type) {
       if (type == null) {
         return null;
       }
@@ -530,7 +563,7 @@ public final class TypeResolver {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@CheckForNull Object obj) {
       if (obj instanceof TypeVariableKey) {
         TypeVariableKey that = (TypeVariableKey) obj;
         return equalsTypeVariable(that.var);
@@ -545,6 +578,7 @@ public final class TypeResolver {
     }
 
     /** Wraps {@code t} in a {@code TypeVariableKey} if it's a type variable. */
+    @CheckForNull
     static TypeVariableKey forLookup(Type t) {
       if (t instanceof TypeVariable) {
         return new TypeVariableKey((TypeVariable<?>) t);

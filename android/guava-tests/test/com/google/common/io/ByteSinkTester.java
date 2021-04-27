@@ -26,7 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
-import java.util.Map;
+import java.util.Map.Entry;
 import junit.framework.TestSuite;
 
 /**
@@ -39,12 +39,11 @@ import junit.framework.TestSuite;
 @AndroidIncompatible // Android doesn't understand tests that lack default constructors.
 public class ByteSinkTester extends SourceSinkTester<ByteSink, byte[], ByteSinkFactory> {
 
-  private static final ImmutableList<Method> testMethods
-      = getTestMethods(ByteSinkTester.class);
+  private static final ImmutableList<Method> testMethods = getTestMethods(ByteSinkTester.class);
 
   static TestSuite tests(String name, ByteSinkFactory factory) {
     TestSuite suite = new TestSuite(name);
-    for (Map.Entry<String, String> entry : TEST_STRINGS.entrySet()) {
+    for (Entry<String, String> entry : TEST_STRINGS.entrySet()) {
       String desc = entry.getKey();
       TestSuite stringSuite = suiteForString(name, factory, entry.getValue(), desc);
       suite.addTest(stringSuite);
@@ -52,18 +51,19 @@ public class ByteSinkTester extends SourceSinkTester<ByteSink, byte[], ByteSinkF
     return suite;
   }
 
-  private static TestSuite suiteForString(String name, ByteSinkFactory factory,
-      String string, String desc) {
+  private static TestSuite suiteForString(
+      String name, ByteSinkFactory factory, String string, String desc) {
     byte[] bytes = string.getBytes(Charsets.UTF_8);
     TestSuite suite = suiteForBytes(name, factory, desc, bytes);
     CharSinkFactory charSinkFactory = SourceSinkFactories.asCharSinkFactory(factory);
-    suite.addTest(CharSinkTester.suiteForString(name + ".asCharSink[Charset]", charSinkFactory,
-        string, desc));
+    suite.addTest(
+        CharSinkTester.suiteForString(
+            name + ".asCharSink[Charset]", charSinkFactory, string, desc));
     return suite;
   }
 
-  private static TestSuite suiteForBytes(String name, ByteSinkFactory factory,
-      String desc, byte[] bytes) {
+  private static TestSuite suiteForBytes(
+      String name, ByteSinkFactory factory, String desc, byte[] bytes) {
     TestSuite suite = new TestSuite(name + " [" + desc + "]");
     for (final Method method : testMethods) {
       suite.addTest(new ByteSinkTester(factory, bytes, name, desc, method));
@@ -73,8 +73,8 @@ public class ByteSinkTester extends SourceSinkTester<ByteSink, byte[], ByteSinkF
 
   private ByteSink sink;
 
-  ByteSinkTester(ByteSinkFactory factory, byte[] data, String suiteName,
-      String caseDesc, Method method) {
+  ByteSinkTester(
+      ByteSinkFactory factory, byte[] data, String suiteName, String caseDesc, Method method) {
     super(factory, data, suiteName, caseDesc, method);
   }
 

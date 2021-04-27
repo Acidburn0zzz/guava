@@ -20,8 +20,8 @@ import com.google.common.annotations.GwtIncompatible;
 import java.util.List;
 
 /**
- * Creates, based on your criteria, a JUnit test suite that exhaustively tests
- * a ConcurrentNavigableMap implementation.
+ * Creates, based on your criteria, a JUnit test suite that exhaustively tests a
+ * ConcurrentNavigableMap implementation.
  *
  * @author Louis Wasserman
  */
@@ -32,7 +32,7 @@ public class ConcurrentNavigableMapTestSuiteBuilder<K, V>
   public static <K, V> ConcurrentNavigableMapTestSuiteBuilder<K, V> using(
       TestSortedMapGenerator<K, V> generator) {
     ConcurrentNavigableMapTestSuiteBuilder<K, V> result =
-        new ConcurrentNavigableMapTestSuiteBuilder<K, V>();
+        new ConcurrentNavigableMapTestSuiteBuilder<>();
     result.usingGenerator(generator);
     return result;
   }

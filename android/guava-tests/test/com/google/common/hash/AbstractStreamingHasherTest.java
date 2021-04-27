@@ -20,12 +20,10 @@ import static com.google.common.base.Charsets.UTF_16LE;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.hash.AbstractStreamingHashFunction.AbstractStreamingHasher;
 import com.google.common.hash.HashTestUtils.RandomHasherAction;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -40,12 +38,12 @@ import junit.framework.TestCase;
 public class AbstractStreamingHasherTest extends TestCase {
   public void testBytes() {
     Sink sink = new Sink(4); // byte order insignificant here
-    byte[] expected = { 1, 2, 3, 4, 5, 6, 7, 8 };
+    byte[] expected = {1, 2, 3, 4, 5, 6, 7, 8};
     sink.putByte((byte) 1);
-    sink.putBytes(new byte[] { 2, 3, 4, 5, 6 });
+    sink.putBytes(new byte[] {2, 3, 4, 5, 6});
     sink.putByte((byte) 7);
     sink.putBytes(new byte[] {});
-    sink.putBytes(new byte[] { 8 });
+    sink.putBytes(new byte[] {8});
     HashCode unused = sink.hash();
     sink.assertInvariants(8);
     sink.assertBytes(expected);
@@ -56,7 +54,7 @@ public class AbstractStreamingHasherTest extends TestCase {
     sink.putShort((short) 0x0201);
     HashCode unused = sink.hash();
     sink.assertInvariants(2);
-    sink.assertBytes(new byte[] { 1, 2, 0, 0 }); // padded with zeros
+    sink.assertBytes(new byte[] {1, 2, 0, 0}); // padded with zeros
   }
 
   public void testInt() {
@@ -64,7 +62,7 @@ public class AbstractStreamingHasherTest extends TestCase {
     sink.putInt(0x04030201);
     HashCode unused = sink.hash();
     sink.assertInvariants(4);
-    sink.assertBytes(new byte[] { 1, 2, 3, 4 });
+    sink.assertBytes(new byte[] {1, 2, 3, 4});
   }
 
   public void testLong() {
@@ -72,7 +70,7 @@ public class AbstractStreamingHasherTest extends TestCase {
     sink.putLong(0x0807060504030201L);
     HashCode unused = sink.hash();
     sink.assertInvariants(8);
-    sink.assertBytes(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+    sink.assertBytes(new byte[] {1, 2, 3, 4, 5, 6, 7, 8});
   }
 
   public void testChar() {
@@ -80,7 +78,7 @@ public class AbstractStreamingHasherTest extends TestCase {
     sink.putChar((char) 0x0201);
     HashCode unused = sink.hash();
     sink.assertInvariants(2);
-    sink.assertBytes(new byte[] { 1, 2, 0, 0  }); // padded with zeros
+    sink.assertBytes(new byte[] {1, 2, 0, 0}); // padded with zeros
   }
 
   public void testString() {
@@ -93,8 +91,7 @@ public class AbstractStreamingHasherTest extends TestCase {
           new Sink(4).putUnencodedChars(s).hash(),
           new Sink(4).putBytes(s.getBytes(UTF_16LE)).hash());
       assertEquals(
-          new Sink(4).putUnencodedChars(s).hash(),
-          new Sink(4).putString(s, UTF_16LE).hash());
+          new Sink(4).putUnencodedChars(s).hash(), new Sink(4).putString(s, UTF_16LE).hash());
     }
   }
 
@@ -103,7 +100,7 @@ public class AbstractStreamingHasherTest extends TestCase {
     sink.putFloat(Float.intBitsToFloat(0x04030201));
     HashCode unused = sink.hash();
     sink.assertInvariants(4);
-    sink.assertBytes(new byte[] { 1, 2, 3, 4 });
+    sink.assertBytes(new byte[] {1, 2, 3, 4});
   }
 
   public void testDouble() {
@@ -111,7 +108,7 @@ public class AbstractStreamingHasherTest extends TestCase {
     sink.putDouble(Double.longBitsToDouble(0x0807060504030201L));
     HashCode unused = sink.hash();
     sink.assertInvariants(8);
-    sink.assertBytes(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+    sink.assertBytes(new byte[] {1, 2, 3, 4, 5, 6, 7, 8});
   }
 
   public void testCorrectExceptions() {
@@ -119,21 +116,24 @@ public class AbstractStreamingHasherTest extends TestCase {
     try {
       sink.putBytes(new byte[8], -1, 4);
       fail();
-    } catch (IndexOutOfBoundsException ok) {}
+    } catch (IndexOutOfBoundsException ok) {
+    }
     try {
       sink.putBytes(new byte[8], 0, 16);
       fail();
-    } catch (IndexOutOfBoundsException ok) {}
+    } catch (IndexOutOfBoundsException ok) {
+    }
     try {
       sink.putBytes(new byte[8], 0, -1);
       fail();
-    } catch (IndexOutOfBoundsException ok) {}
+    } catch (IndexOutOfBoundsException ok) {
+    }
   }
 
   /**
-   * This test creates a long random sequence of inputs, then a lot of differently configured
-   * sinks process it; all should produce the same answer, the only difference should be the
-   * number of process()/processRemaining() invocations, due to alignment.
+   * This test creates a long random sequence of inputs, then a lot of differently configured sinks
+   * process it; all should produce the same answer, the only difference should be the number of
+   * process()/processRemaining() invocations, due to alignment.
    */
   @AndroidIncompatible // slow. TODO(cpovirk): Maybe just reduce iterations under Android.
   public void testExhaustive() throws Exception {
@@ -197,11 +197,13 @@ public class AbstractStreamingHasherTest extends TestCase {
       this.bufferSize = chunkSize;
     }
 
-    @Override HashCode makeHash() {
+    @Override
+    protected HashCode makeHash() {
       return HashCode.fromBytes(out.toByteArray());
     }
 
-    @Override protected void process(ByteBuffer bb) {
+    @Override
+    protected void process(ByteBuffer bb) {
       processCalled++;
       assertEquals(ByteOrder.LITTLE_ENDIAN, bb.order());
       assertTrue(bb.remaining() >= chunkSize);
@@ -210,7 +212,8 @@ public class AbstractStreamingHasherTest extends TestCase {
       }
     }
 
-    @Override protected void processRemaining(ByteBuffer bb) {
+    @Override
+    protected void processRemaining(ByteBuffer bb) {
       assertFalse(remainingCalled);
       remainingCalled = true;
       assertEquals(ByteOrder.LITTLE_ENDIAN, bb.order());
@@ -248,32 +251,12 @@ public class AbstractStreamingHasherTest extends TestCase {
   // Assumes that AbstractNonStreamingHashFunction works properly (must be tested elsewhere!)
   private static class Control extends AbstractNonStreamingHashFunction {
     @Override
-    public HashCode hashBytes(byte[] input) {
-      return HashCode.fromBytes(input);
-    }
-
-    @Override
     public HashCode hashBytes(byte[] input, int off, int len) {
-      return hashBytes(Arrays.copyOfRange(input, off, off + len));
+      return HashCode.fromBytes(Arrays.copyOfRange(input, off, off + len));
     }
 
     @Override
     public int bits() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public HashCode hashString(CharSequence input, Charset charset) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public HashCode hashLong(long input) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public HashCode hashInt(int input) {
       throw new UnsupportedOperationException();
     }
   }

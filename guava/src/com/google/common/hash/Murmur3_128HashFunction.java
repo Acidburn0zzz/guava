@@ -27,10 +27,11 @@ package com.google.common.hash;
 
 import static com.google.common.primitives.UnsignedBytes.toInt;
 
+import com.google.errorprone.annotations.Immutable;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import javax.annotation.Nullable;
+import javax.annotation.CheckForNull;
 
 /**
  * See MurmurHash3_x64_128 in <a href="http://smhasher.googlecode.com/svn/trunk/MurmurHash3.cpp">the
@@ -39,7 +40,14 @@ import javax.annotation.Nullable;
  * @author Austin Appleby
  * @author Dimitris Andreou
  */
-final class Murmur3_128HashFunction extends AbstractStreamingHashFunction implements Serializable {
+@Immutable
+@ElementTypesAreNonnullByDefault
+final class Murmur3_128HashFunction extends AbstractHashFunction implements Serializable {
+  static final HashFunction MURMUR3_128 = new Murmur3_128HashFunction(0);
+
+  static final HashFunction GOOD_FAST_HASH_128 =
+      new Murmur3_128HashFunction(Hashing.GOOD_FAST_HASH_SEED);
+
   // TODO(user): when the shortcuts are implemented, update BloomFilterStrategies
   private final int seed;
 
@@ -63,7 +71,7 @@ final class Murmur3_128HashFunction extends AbstractStreamingHashFunction implem
   }
 
   @Override
-  public boolean equals(@Nullable Object object) {
+  public boolean equals(@CheckForNull Object object) {
     if (object instanceof Murmur3_128HashFunction) {
       Murmur3_128HashFunction other = (Murmur3_128HashFunction) object;
       return seed == other.seed;
@@ -159,7 +167,7 @@ final class Murmur3_128HashFunction extends AbstractStreamingHashFunction implem
     }
 
     @Override
-    public HashCode makeHash() {
+    protected HashCode makeHash() {
       h1 ^= length;
       h2 ^= length;
 

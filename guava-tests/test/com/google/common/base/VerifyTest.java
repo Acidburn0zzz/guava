@@ -22,9 +22,7 @@ import com.google.common.annotations.GwtCompatible;
 import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
-/**
- * Unit test for {@link com.google.common.base.Verify}.
- */
+/** Unit test for {@link com.google.common.base.Verify}. */
 @GwtCompatible
 public class VerifyTest extends TestCase {
   public void testVerify_simple_success() {
@@ -48,7 +46,7 @@ public class VerifyTest extends TestCase {
       verify(false, "message");
       fail();
     } catch (VerifyException expected) {
-      assertThat(expected).hasMessage("message");
+      assertThat(expected).hasMessageThat().isEqualTo("message");
     }
   }
 
@@ -94,15 +92,17 @@ public class VerifyTest extends TestCase {
     }
   }
 
-  private static final Object IGNORE_ME = new Object() {
-    @Override public String toString() {
-      throw new AssertionFailedError();
-    }
-  };
+  private static final Object IGNORE_ME =
+      new Object() {
+        @Override
+        public String toString() {
+          throw new AssertionFailedError();
+        }
+      };
 
   private static final String FORMAT = "I ate %s pies.";
 
   private static void checkMessage(Exception e) {
-    assertThat(e).hasMessage("I ate 5 pies.");
+    assertThat(e).hasMessageThat().isEqualTo("I ate 5 pies.");
   }
 }

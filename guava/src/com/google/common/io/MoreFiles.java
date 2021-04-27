@@ -17,6 +17,7 @@
 package com.google.common.io;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 
 import com.google.common.annotations.Beta;
@@ -24,8 +25,8 @@ import com.google.common.annotations.GwtIncompatible;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.TreeTraverser;
-import com.google.common.io.ByteSource.AsCharSource;
+import com.google.common.graph.SuccessorsFunction;
+import com.google.common.graph.Traverser;
 import com.google.j2objc.annotations.J2ObjCIncompatible;
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,7 +54,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Static utilities for use with {@link Path} instances, intended to complement {@link Files}.
@@ -115,8 +116,9 @@ public final class MoreFiles {
 
     private BasicFileAttributes readAttributes() throws IOException {
       return Files.readAttributes(
-          path, BasicFileAttributes.class,
-          followLinks ? FOLLOW_LINKS : new LinkOption[] { NOFOLLOW_LINKS });
+          path,
+          BasicFileAttributes.class,
+          followLinks ? FOLLOW_LINKS : new LinkOption[] {NOFOLLOW_LINKS});
     }
 
     @Override
@@ -156,8 +158,7 @@ public final class MoreFiles {
     @Override
     public byte[] read() throws IOException {
       try (SeekableByteChannel channel = Files.newByteChannel(path, options)) {
-        return com.google.common.io.Files.readFile(
-            Channels.newInputStream(channel), channel.size());
+        return ByteStreams.toByteArray(Channels.newInputStream(channel), channel.size());
       }
     }
 
@@ -236,8 +237,7 @@ public final class MoreFiles {
   }
 
   /**
-   * Returns a view of the given {@code path} as a {@link CharSink} using the given {@code
-   * charset}.
+   * Returns a view of the given {@code path} as a {@link CharSink} using the given {@code charset}.
    *
    * <p>Any {@linkplain OpenOption open options} provided are used when opening streams to the file
    * and may affect the behavior of the returned sink and the streams it provides. See {@link
@@ -267,45 +267,55 @@ public final class MoreFiles {
   }
 
   /**
-   * Returns a {@link TreeTraverser} for traversing a directory tree. The returned traverser
-   * attempts to avoid following symbolic links to directories. However, the traverser cannot
-   * guarantee that it will not follow symbolic links to directories as it is possible for a
-   * directory to be replaced with a symbolic link between checking if the file is a directory and
-   * actually reading the contents of that directory.
+   * Returns a {@link Traverser} instance for the file and directory tree. The returned traverser
+   * starts from a {@link Path} and will return all files and directories it encounters.
    *
-   * <p>Note that if the {@link Path} passed to one of the traversal methods does not exist, no
-   * exception will be thrown and the returned {@link Iterable} will contain a single element: that
-   * path.
+   * <p>The returned traverser attempts to avoid following symbolic links to directories. However,
+   * the traverser cannot guarantee that it will not follow symbolic links to directories as it is
+   * possible for a directory to be replaced with a symbolic link between checking if the file is a
+   * directory and actually reading the contents of that directory.
    *
-   * <p>{@link DirectoryIteratorException}  may be thrown when iterating {@link Iterable} instances
-   * created by this traverser if an {@link IOException} is thrown by a call to
-   * {@link #listFiles(Path)}.
+   * <p>If the {@link Path} passed to one of the traversal methods does not exist or is not a
+   * directory, no exception will be thrown and the returned {@link Iterable} will contain a single
+   * element: that path.
+   *
+   * <p>{@link DirectoryIteratorException} may be thrown when iterating {@link Iterable} instances
+   * created by this traverser if an {@link IOException} is thrown by a call to {@link
+   * #listFiles(Path)}.
+   *
+   * <p>Example: {@code MoreFiles.fileTraverser().depthFirstPreOrder(Paths.get("/"))} may return the
+   * following paths: {@code ["/", "/etc", "/etc/config.txt", "/etc/fonts", "/home", "/home/alice",
+   * ...]}
+   *
+   * @since 23.5
    */
-  public static TreeTraverser<Path> directoryTreeTraverser() {
-    return DirectoryTreeTraverser.INSTANCE;
+  public static Traverser<Path> fileTraverser() {
+    return Traverser.forTree(FILE_TREE);
   }
 
-  private static final class DirectoryTreeTraverser extends TreeTraverser<Path> {
-
-    private static final DirectoryTreeTraverser INSTANCE = new DirectoryTreeTraverser();
-
-    @Override
-    public Iterable<Path> children(Path dir) {
-      if (Files.isDirectory(dir, NOFOLLOW_LINKS)) {
-        try {
-          return listFiles(dir);
-        } catch (IOException e) {
-          // the exception thrown when iterating a DirectoryStream if an I/O exception occurs
-          throw new DirectoryIteratorException(e);
+  private static final SuccessorsFunction<Path> FILE_TREE =
+      new SuccessorsFunction<Path>() {
+        @Override
+        public Iterable<Path> successors(Path path) {
+          return fileTreeChildren(path);
         }
+      };
+
+  private static Iterable<Path> fileTreeChildren(Path dir) {
+    if (Files.isDirectory(dir, NOFOLLOW_LINKS)) {
+      try {
+        return listFiles(dir);
+      } catch (IOException e) {
+        // the exception thrown when iterating a DirectoryStream if an I/O exception occurs
+        throw new DirectoryIteratorException(e);
       }
-      return ImmutableList.of();
     }
+    return ImmutableList.of();
   }
 
   /**
-   * Returns a predicate that returns the result of {@link Files#isDirectory(Path, LinkOption...)}
-   * on input paths with the given link options.
+   * Returns a predicate that returns the result of {@link java.nio.file.Files#isDirectory(Path,
+   * LinkOption...)} on input paths with the given link options.
    */
   public static Predicate<Path> isDirectory(LinkOption... options) {
     final LinkOption[] optionsCopy = options.clone();
@@ -322,9 +332,17 @@ public final class MoreFiles {
     };
   }
 
+  /** Returns whether or not the file with the given name in the given dir is a directory. */
+  private static boolean isDirectory(
+      SecureDirectoryStream<Path> dir, Path name, LinkOption... options) throws IOException {
+    return dir.getFileAttributeView(name, BasicFileAttributeView.class, options)
+        .readAttributes()
+        .isDirectory();
+  }
+
   /**
-   * Returns a predicate that returns the result of
-   * {@link Files#isRegularFile(Path, LinkOption...)} on input paths with the given link options.
+   * Returns a predicate that returns the result of {@link java.nio.file.Files#isRegularFile(Path,
+   * LinkOption...)} on input paths with the given link options.
    */
   public static Predicate<Path> isRegularFile(LinkOption... options) {
     final LinkOption[] optionsCopy = options.clone();
@@ -374,6 +392,7 @@ public final class MoreFiles {
    * Like the unix command of the same name, creates an empty file or updates the last modified
    * timestamp of the existing file at the given path to the current system time.
    */
+  @SuppressWarnings("GoodTime") // reading system time without TimeSource
   public static void touch(Path path) throws IOException {
     checkNotNull(path);
 
@@ -399,10 +418,10 @@ public final class MoreFiles {
    * parent directories. The parent directory is created with the given {@code attrs}.
    *
    * @throws IOException if an I/O error occurs, or if any necessary but nonexistent parent
-   *                     directories of the specified file could not be created.
+   *     directories of the specified file could not be created.
    */
-  public static void createParentDirectories(
-      Path path, FileAttribute<?>... attrs) throws IOException {
+  public static void createParentDirectories(Path path, FileAttribute<?>... attrs)
+      throws IOException {
     // Interestingly, unlike File.getCanonicalFile(), Path/Files provides no way of getting the
     // canonical (absolute, normalized, symlinks resolved, etc.) form of a path to a nonexistent
     // file. getCanonicalFile() can at least get the canonical form of the part of the path which
@@ -410,10 +429,10 @@ public final class MoreFiles {
     Path normalizedAbsolutePath = path.toAbsolutePath().normalize();
     Path parent = normalizedAbsolutePath.getParent();
     if (parent == null) {
-       // The given directory is a filesystem root. All zero of its ancestors exist. This doesn't
-       // mean that the root itself exists -- consider x:\ on a Windows machine without such a
-       // drive -- or even that the caller can create it, but this method makes no such guarantees
-       // even for non-root files.
+      // The given directory is a filesystem root. All zero of its ancestors exist. This doesn't
+      // mean that the root itself exists -- consider x:\ on a Windows machine without such a
+      // drive -- or even that the caller can create it, but this method makes no such guarantees
+      // even for non-root files.
       return;
     }
 
@@ -455,8 +474,8 @@ public final class MoreFiles {
   }
 
   /**
-   * Returns the file name without its
-   * <a href="http://en.wikipedia.org/wiki/Filename_extension">file extension</a> or path. This is
+   * Returns the file name without its <a
+   * href="http://en.wikipedia.org/wiki/Filename_extension">file extension</a> or path. This is
    * similar to the {@code basename} unix command. The result does not include the '{@code .}'.
    */
   public static String getNameWithoutExtension(Path path) {
@@ -483,28 +502,25 @@ public final class MoreFiles {
    *
    * <h2>Warning: Security of recursive deletes</h2>
    *
-   * <p>On a file system that supports symbolic links and does <i>not</i> support
-   * {@link SecureDirectoryStream}, it is possible for a recursive delete to delete files and
-   * directories that are <i>outside</i> the directory being deleted. This can happen if, after
-   * checking that a file is a directory (and not a symbolic link), that directory is replaced by a
-   * symbolic link to an outside directory before the call that opens the directory to read its
-   * entries.
+   * <p>On a file system that supports symbolic links and does <i>not</i> support {@link
+   * SecureDirectoryStream}, it is possible for a recursive delete to delete files and directories
+   * that are <i>outside</i> the directory being deleted. This can happen if, after checking that a
+   * file is a directory (and not a symbolic link), that directory is replaced by a symbolic link to
+   * an outside directory before the call that opens the directory to read its entries.
    *
    * <p>By default, this method throws {@link InsecureRecursiveDeleteException} if it can't
-   * guarantee the security of recursive deletes. If you wish to allow the recursive deletes
-   * anyway, pass {@link RecursiveDeleteOption#ALLOW_INSECURE} to this method to override that
-   * behavior.
+   * guarantee the security of recursive deletes. If you wish to allow the recursive deletes anyway,
+   * pass {@link RecursiveDeleteOption#ALLOW_INSECURE} to this method to override that behavior.
    *
-   * @throws NoSuchFileException if {@code path} does not exist <i>(optional specific
-   *     exception)</i>
+   * @throws NoSuchFileException if {@code path} does not exist <i>(optional specific exception)</i>
    * @throws InsecureRecursiveDeleteException if the security of recursive deletes can't be
    *     guaranteed for the file system and {@link RecursiveDeleteOption#ALLOW_INSECURE} was not
    *     specified
    * @throws IOException if {@code path} or any file in the subtree rooted at it can't be deleted
    *     for any reason
    */
-  public static void deleteRecursively(
-      Path path, RecursiveDeleteOption... options) throws IOException {
+  public static void deleteRecursively(Path path, RecursiveDeleteOption... options)
+      throws IOException {
     Path parentPath = getParentPath(path);
     if (parentPath == null) {
       throw new FileSystemException(path.toString(), null, "can't delete recursively");
@@ -516,8 +532,8 @@ public final class MoreFiles {
       try (DirectoryStream<Path> parent = Files.newDirectoryStream(parentPath)) {
         if (parent instanceof SecureDirectoryStream) {
           sdsSupported = true;
-          exceptions = deleteRecursivelySecure(
-              (SecureDirectoryStream<Path>) parent, path.getFileName());
+          exceptions =
+              deleteRecursivelySecure((SecureDirectoryStream<Path>) parent, path.getFileName());
         }
       }
 
@@ -539,11 +555,10 @@ public final class MoreFiles {
   }
 
   /**
-   * Deletes all files within the directory at the given {@code path}
-   * {@linkplain #deleteRecursively recursively}. Does not delete the directory itself. Deletes
-   * symbolic links, not their targets (subject to the caveat below). If {@code path} itself is
-   * a symbolic link to a directory, that link is followed and the contents of the directory it
-   * targets are deleted.
+   * Deletes all files within the directory at the given {@code path} {@linkplain #deleteRecursively
+   * recursively}. Does not delete the directory itself. Deletes symbolic links, not their targets
+   * (subject to the caveat below). If {@code path} itself is a symbolic link to a directory, that
+   * link is followed and the contents of the directory it targets are deleted.
    *
    * <p>If an I/O exception occurs attempting to read, open or delete any file under the given
    * directory, this method skips that file and continues. All such exceptions are collected and,
@@ -552,20 +567,17 @@ public final class MoreFiles {
    *
    * <h2>Warning: Security of recursive deletes</h2>
    *
-   * <p>On a file system that supports symbolic links and does <i>not</i> support
-   * {@link SecureDirectoryStream}, it is possible for a recursive delete to delete files and
-   * directories that are <i>outside</i> the directory being deleted. This can happen if, after
-   * checking that a file is a directory (and not a symbolic link), that directory is replaced by a
-   * symbolic link to an outside directory before the call that opens the directory to read its
-   * entries.
+   * <p>On a file system that supports symbolic links and does <i>not</i> support {@link
+   * SecureDirectoryStream}, it is possible for a recursive delete to delete files and directories
+   * that are <i>outside</i> the directory being deleted. This can happen if, after checking that a
+   * file is a directory (and not a symbolic link), that directory is replaced by a symbolic link to
+   * an outside directory before the call that opens the directory to read its entries.
    *
    * <p>By default, this method throws {@link InsecureRecursiveDeleteException} if it can't
-   * guarantee the security of recursive deletes. If you wish to allow the recursive deletes
-   * anyway, pass {@link RecursiveDeleteOption#ALLOW_INSECURE} to this method to override that
-   * behavior.
+   * guarantee the security of recursive deletes. If you wish to allow the recursive deletes anyway,
+   * pass {@link RecursiveDeleteOption#ALLOW_INSECURE} to this method to override that behavior.
    *
-   * @throws NoSuchFileException if {@code path} does not exist <i>(optional specific
-   *     exception)</i>
+   * @throws NoSuchFileException if {@code path} does not exist <i>(optional specific exception)</i>
    * @throws NotDirectoryException if the file at {@code path} is not a directory <i>(optional
    *     specific exception)</i>
    * @throws InsecureRecursiveDeleteException if the security of recursive deletes can't be
@@ -573,8 +585,8 @@ public final class MoreFiles {
    *     specified
    * @throws IOException if one or more files can't be deleted for any reason
    */
-  public static void deleteDirectoryContents(
-      Path path, RecursiveDeleteOption... options) throws IOException {
+  public static void deleteDirectoryContents(Path path, RecursiveDeleteOption... options)
+      throws IOException {
     Collection<IOException> exceptions = null; // created lazily if needed
     try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
       if (stream instanceof SecureDirectoryStream) {
@@ -598,11 +610,10 @@ public final class MoreFiles {
   }
 
   /**
-   * Secure recursive delete using {@code SecureDirectoryStream}. Returns a collection of
-   * exceptions that occurred or null if no exceptions were thrown.
+   * Secure recursive delete using {@code SecureDirectoryStream}. Returns a collection of exceptions
+   * that occurred or null if no exceptions were thrown.
    */
-  @Nullable
-  private static Collection<IOException> deleteRecursivelySecure(
+  private static @Nullable Collection<IOException> deleteRecursivelySecure(
       SecureDirectoryStream<Path> dir, Path path) {
     Collection<IOException> exceptions = null;
     try {
@@ -630,8 +641,7 @@ public final class MoreFiles {
    * Secure method for deleting the contents of a directory using {@code SecureDirectoryStream}.
    * Returns a collection of exceptions that occurred or null if no exceptions were thrown.
    */
-  @Nullable
-  private static Collection<IOException> deleteDirectoryContentsSecure(
+  private static @Nullable Collection<IOException> deleteDirectoryContentsSecure(
       SecureDirectoryStream<Path> dir) {
     Collection<IOException> exceptions = null;
     try {
@@ -649,8 +659,7 @@ public final class MoreFiles {
    * Insecure recursive delete for file systems that don't support {@code SecureDirectoryStream}.
    * Returns a collection of exceptions that occurred or null if no exceptions were thrown.
    */
-  @Nullable
-  private static Collection<IOException> deleteRecursivelyInsecure(Path path) {
+  private static @Nullable Collection<IOException> deleteRecursivelyInsecure(Path path) {
     Collection<IOException> exceptions = null;
     try {
       if (Files.isDirectory(path, NOFOLLOW_LINKS)) {
@@ -673,11 +682,10 @@ public final class MoreFiles {
 
   /**
    * Simple, insecure method for deleting the contents of a directory for file systems that don't
-   * support {@code SecureDirectoryStream}. Returns a collection of exceptions that occurred or
-   * null if no exceptions were thrown.
+   * support {@code SecureDirectoryStream}. Returns a collection of exceptions that occurred or null
+   * if no exceptions were thrown.
    */
-  @Nullable
-  private static Collection<IOException> deleteDirectoryContentsInsecure(
+  private static @Nullable Collection<IOException> deleteDirectoryContentsInsecure(
       DirectoryStream<Path> dir) {
     Collection<IOException> exceptions = null;
     try {
@@ -696,8 +704,7 @@ public final class MoreFiles {
    * path, this is simple. Otherwise, we need to do some trickier things. Returns null if the path
    * is a root or is the empty path.
    */
-  @Nullable
-  private static Path getParentPath(Path path) {
+  private static @Nullable Path getParentPath(Path path) {
     Path parent = path.getParent();
 
     // Paths that have a parent:
@@ -730,29 +737,17 @@ public final class MoreFiles {
     }
   }
 
-  /**
-   * Checks that the given options allow an insecure delete, throwing an exception if not.
-   */
-  private static void checkAllowsInsecure(
-      Path path, RecursiveDeleteOption[] options) throws InsecureRecursiveDeleteException {
+  /** Checks that the given options allow an insecure delete, throwing an exception if not. */
+  private static void checkAllowsInsecure(Path path, RecursiveDeleteOption[] options)
+      throws InsecureRecursiveDeleteException {
     if (!Arrays.asList(options).contains(RecursiveDeleteOption.ALLOW_INSECURE)) {
       throw new InsecureRecursiveDeleteException(path.toString());
     }
   }
 
   /**
-   * Returns whether or not the file with the given name in the given dir is a directory.
-   */
-  private static boolean isDirectory(
-      SecureDirectoryStream<Path> dir, Path name, LinkOption... options) throws IOException {
-    return dir.getFileAttributeView(name, BasicFileAttributeView.class, options)
-        .readAttributes()
-        .isDirectory();
-  }
-
-  /**
-   * Adds the given exception to the given collection, creating the collection if it's null.
-   * Returns the collection.
+   * Adds the given exception to the given collection, creating the collection if it's null. Returns
+   * the collection.
    */
   private static Collection<IOException> addException(
       @Nullable Collection<IOException> exceptions, IOException e) {
@@ -768,8 +763,7 @@ public final class MoreFiles {
    * null, the other collection is returned. Otherwise, the elements of {@code other} are added to
    * {@code exceptions} and {@code exceptions} is returned.
    */
-  @Nullable
-  private static Collection<IOException> concat(
+  private static @Nullable Collection<IOException> concat(
       @Nullable Collection<IOException> exceptions, @Nullable Collection<IOException> other) {
     if (exceptions == null) {
       return other;
@@ -780,19 +774,77 @@ public final class MoreFiles {
   }
 
   /**
-   * Throws an exception indicating that one or more files couldn't be deleted. The thrown
-   * exception contains all the exceptions in the given collection as suppressed exceptions.
+   * Throws an exception indicating that one or more files couldn't be deleted when deleting {@code
+   * path} or its contents.
+   *
+   * <p>If there is only one exception in the collection, and it is a {@link NoSuchFileException}
+   * thrown because {@code path} itself didn't exist, then throws that exception. Otherwise, the
+   * thrown exception contains all the exceptions in the given collection as suppressed exceptions.
    */
-  private static void throwDeleteFailed(
-      Path path, Collection<IOException> exceptions) throws FileSystemException {
+  private static void throwDeleteFailed(Path path, Collection<IOException> exceptions)
+      throws FileSystemException {
+    NoSuchFileException pathNotFound = pathNotFound(path, exceptions);
+    if (pathNotFound != null) {
+      throw pathNotFound;
+    }
     // TODO(cgdecker): Should there be a custom exception type for this?
     // Also, should we try to include the Path of each file we may have failed to delete rather
     // than just the exceptions that occurred?
-    FileSystemException deleteFailed = new FileSystemException(path.toString(), null,
-        "failed to delete one or more files; see suppressed exceptions for details");
+    FileSystemException deleteFailed =
+        new FileSystemException(
+            path.toString(),
+            null,
+            "failed to delete one or more files; see suppressed exceptions for details");
     for (IOException e : exceptions) {
       deleteFailed.addSuppressed(e);
     }
     throw deleteFailed;
+  }
+
+  private static @Nullable NoSuchFileException pathNotFound(
+      Path path, Collection<IOException> exceptions) {
+    if (exceptions.size() != 1) {
+      return null;
+    }
+    IOException exception = getOnlyElement(exceptions);
+    if (!(exception instanceof NoSuchFileException)) {
+      return null;
+    }
+    NoSuchFileException noSuchFileException = (NoSuchFileException) exception;
+    String exceptionFile = noSuchFileException.getFile();
+    if (exceptionFile == null) {
+      /*
+       * It's not clear whether this happens in practice, especially with the filesystem
+       * implementations that are built into java.nio.
+       */
+      return null;
+    }
+    Path parentPath = getParentPath(path);
+    if (parentPath == null) {
+      /*
+       * This is probably impossible:
+       *
+       * - In deleteRecursively, we require the path argument to have a parent.
+       *
+       * - In deleteDirectoryContents, the path argument may have no parent. Fortunately, all the
+       *   *other* paths we process will be descendants of that. That leaves only the original path
+       *   argument for us to consider. And the only place we call pathNotFound is from
+       *   throwDeleteFailed, and the other place that we call throwDeleteFailed inside
+       *   deleteDirectoryContents is when an exception is thrown during the recusive steps. Any
+       *   failure during the initial lookup of the path argument itself is rethrown directly. So
+       *   any exception that we're seeing here is from a descendant, which naturally has a parent.
+       *   I think.
+       *
+       * Still, if this can happen somehow (a weird filesystem implementation that lets callers
+       * change its working directly concurrently with a call to deleteDirectoryContents?), it makes
+       * more sense for us to fall back to a generic FileSystemException (by returning null here)
+       * than to dereference parentPath and end up producing NullPointerException.
+       */
+      return null;
+    }
+    if (exceptionFile.equals(parentPath.resolve(path.getFileName()).toString())) {
+      return noSuchFileException;
+    }
+    return null;
   }
 }

@@ -18,7 +18,7 @@ package com.google.common.collect;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.VisibleForTesting;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * Implementation of {@link ImmutableSet} with two or more elements.
@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
 @SuppressWarnings("serial") // uses writeReplace(), not default serialization
 final class RegularImmutableSet<E> extends ImmutableSet<E> {
   static final RegularImmutableSet<Object> EMPTY =
-      new RegularImmutableSet<Object>(new Object[0], 0, null, 0, 0);
+      new RegularImmutableSet<>(new Object[0], 0, null, 0, 0);
 
   @VisibleForTesting final transient Object[] elements;
   // the same elements in hashed positions (plus nulls)
@@ -48,7 +48,7 @@ final class RegularImmutableSet<E> extends ImmutableSet<E> {
   }
 
   @Override
-  public boolean contains(@Nullable Object target) {
+  public boolean contains(@NullableDecl Object target) {
     Object[] table = this.table;
     if (target == null || table == null) {
       return false;
@@ -71,7 +71,22 @@ final class RegularImmutableSet<E> extends ImmutableSet<E> {
 
   @Override
   public UnmodifiableIterator<E> iterator() {
-    return (UnmodifiableIterator<E>) Iterators.forArray(elements, 0, size, 0);
+    return asList().iterator();
+  }
+
+  @Override
+  Object[] internalArray() {
+    return elements;
+  }
+
+  @Override
+  int internalArrayStart() {
+    return 0;
+  }
+
+  @Override
+  int internalArrayEnd() {
+    return size;
   }
 
   @Override

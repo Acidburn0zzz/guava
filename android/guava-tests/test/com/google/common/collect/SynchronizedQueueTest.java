@@ -16,6 +16,7 @@
 
 package com.google.common.collect;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Queue;
@@ -29,9 +30,9 @@ import junit.framework.TestCase;
 public class SynchronizedQueueTest extends TestCase {
 
   protected Queue<String> create() {
-    TestQueue<String> inner = new TestQueue<String>();
+    TestQueue<String> inner = new TestQueue<>();
     Queue<String> outer = Synchronized.queue(inner, inner.mutex);
-    outer.add("foo");  // necessary because we try to remove elements later on
+    outer.add("foo"); // necessary because we try to remove elements later on
     return outer;
   }
 
@@ -55,6 +56,12 @@ public class SynchronizedQueueTest extends TestCase {
     public E remove() {
       assertTrue(Thread.holdsLock(mutex));
       return delegate.remove();
+    }
+
+    @Override
+    public boolean remove(Object object) {
+      assertTrue(Thread.holdsLock(mutex));
+      return delegate.remove(object);
     }
 
     @Override
@@ -107,12 +114,6 @@ public class SynchronizedQueueTest extends TestCase {
     }
 
     @Override
-    public boolean remove(Object object) {
-      assertTrue(Thread.holdsLock(mutex));
-      return delegate.remove(object);
-    }
-
-    @Override
     public boolean containsAll(Collection<?> collection) {
       assertTrue(Thread.holdsLock(mutex));
       return delegate.containsAll(collection);
@@ -160,9 +161,9 @@ public class SynchronizedQueueTest extends TestCase {
     create().add("foo");
     create().addAll(ImmutableList.of("foo"));
     create().clear();
-    create().contains("foo");
-    create().containsAll(ImmutableList.of("foo"));
-    create().equals(ImmutableList.of("foo"));
+    boolean unused = create().contains("foo");
+    boolean unused2 = create().containsAll(ImmutableList.of("foo"));
+    create().equals(new ArrayDeque<>(ImmutableList.of("foo")));
     create().hashCode();
     create().isEmpty();
     create().iterator();
@@ -171,6 +172,6 @@ public class SynchronizedQueueTest extends TestCase {
     create().retainAll(ImmutableList.of("foo"));
     create().size();
     create().toArray();
-    create().toArray(new String[] { "foo" });
+    create().toArray(new String[] {"foo"});
   }
 }

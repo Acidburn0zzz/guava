@@ -21,7 +21,7 @@ import java.util.ServiceConfigurationError;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * Methods factored out so that they can be emulated differently in GWT.
@@ -36,6 +36,7 @@ final class Platform {
   private Platform() {}
 
   /** Calls {@link System#nanoTime()}. */
+  @SuppressWarnings("GoodTime") // reading system time without TimeSource
   static long systemNanoTime() {
     return System.nanoTime();
   }
@@ -46,17 +47,35 @@ final class Platform {
 
   static <T extends Enum<T>> Optional<T> getEnumIfPresent(Class<T> enumClass, String value) {
     WeakReference<? extends Enum<?>> ref = Enums.getEnumConstants(enumClass).get(value);
-    return ref == null
-        ? Optional.<T>absent()
-        : Optional.of(enumClass.cast(ref.get()));
+    return ref == null ? Optional.<T>absent() : Optional.of(enumClass.cast(ref.get()));
   }
 
   static String formatCompact4Digits(double value) {
     return String.format(Locale.ROOT, "%.4g", value);
   }
 
-  static boolean stringIsNullOrEmpty(@Nullable String string) {
+  static boolean stringIsNullOrEmpty(@NullableDecl String string) {
     return string == null || string.isEmpty();
+  }
+
+  /**
+   * Returns the string if it is not null, or an empty string otherwise.
+   *
+   * @param string the string to test and possibly return
+   * @return {@code string} if it is not null; {@code ""} otherwise
+   */
+  static String nullToEmpty(@NullableDecl String string) {
+    return (string == null) ? "" : string;
+  }
+
+  /**
+   * Returns the string if it is not empty, or a null string otherwise.
+   *
+   * @param string the string to test and possibly return
+   * @return {@code string} if it is not empty; {@code null} otherwise
+   */
+  static String emptyToNull(@NullableDecl String string) {
+    return stringIsNullOrEmpty(string) ? null : string;
   }
 
   static CommonPattern compilePattern(String pattern) {
@@ -64,8 +83,8 @@ final class Platform {
     return patternCompiler.compile(pattern);
   }
 
-  static boolean usingJdkPatternCompiler() {
-    return patternCompiler instanceof JdkPatternCompiler;
+  static boolean patternCompilerIsPcreLike() {
+    return patternCompiler.isPcreLike();
   }
 
   private static PatternCompiler loadPatternCompiler() {
@@ -86,5 +105,12 @@ final class Platform {
     public CommonPattern compile(String pattern) {
       return new JdkPattern(Pattern.compile(pattern));
     }
+
+    @Override
+    public boolean isPcreLike() {
+      return true;
+    }
   }
+
+  static void checkGwtRpcEnabled() {}
 }

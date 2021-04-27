@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.google.common.collect;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -21,11 +22,10 @@ import com.google.common.annotations.GwtCompatible;
 import com.google.common.collect.ImmutableMap.IteratorBasedImmutableMap;
 import java.io.Serializable;
 import java.util.EnumMap;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
- * Implementation of {@link ImmutableMap} backed by a non-empty {@link
- * java.util.EnumMap}.
+ * Implementation of {@link ImmutableMap} backed by a non-empty {@link java.util.EnumMap}.
  *
  * @author Louis Wasserman
  */
@@ -40,7 +40,7 @@ final class ImmutableEnumMap<K extends Enum<K>, V> extends IteratorBasedImmutabl
         Entry<K, V> entry = Iterables.getOnlyElement(map.entrySet());
         return ImmutableMap.of(entry.getKey(), entry.getValue());
       default:
-        return new ImmutableEnumMap<K, V>(map);
+        return new ImmutableEnumMap<>(map);
     }
   }
 
@@ -62,7 +62,7 @@ final class ImmutableEnumMap<K extends Enum<K>, V> extends IteratorBasedImmutabl
   }
 
   @Override
-  public boolean containsKey(@Nullable Object key) {
+  public boolean containsKey(@NullableDecl Object key) {
     return delegate.containsKey(key);
   }
 
@@ -95,7 +95,7 @@ final class ImmutableEnumMap<K extends Enum<K>, V> extends IteratorBasedImmutabl
   // All callers of the constructor are restricted to <K extends Enum<K>>.
   @Override
   Object writeReplace() {
-    return new EnumSerializedForm<K, V>(delegate);
+    return new EnumSerializedForm<>(delegate);
   }
 
   /*
@@ -109,7 +109,7 @@ final class ImmutableEnumMap<K extends Enum<K>, V> extends IteratorBasedImmutabl
     }
 
     Object readResolve() {
-      return new ImmutableEnumMap<K, V>(delegate);
+      return new ImmutableEnumMap<>(delegate);
     }
 
     private static final long serialVersionUID = 0;

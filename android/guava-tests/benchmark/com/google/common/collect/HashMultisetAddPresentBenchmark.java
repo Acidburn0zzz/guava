@@ -28,7 +28,7 @@ import java.util.Random;
 public class HashMultisetAddPresentBenchmark {
   private static final int ARRAY_MASK = 0x0ffff;
   private static final int ARRAY_SIZE = 0x10000;
-  List<Multiset<Integer>> multisets = new ArrayList<Multiset<Integer>>(0x10000);
+  List<Multiset<Integer>> multisets = new ArrayList<>(0x10000);
   int[] queries = new int[ARRAY_SIZE];
 
   @BeforeExperiment
@@ -43,7 +43,8 @@ public class HashMultisetAddPresentBenchmark {
     }
   }
 
-  @Benchmark int add(int reps) {
+  @Benchmark
+  int add(int reps) {
     int tmp = 0;
     for (int i = 0; i < reps; i++) {
       int j = i & ARRAY_MASK;

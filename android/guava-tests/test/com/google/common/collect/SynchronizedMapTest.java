@@ -25,6 +25,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import junit.framework.TestCase;
 
@@ -37,96 +38,112 @@ public class SynchronizedMapTest extends TestCase {
   public final Object mutex = new Integer(1); // something Serializable
 
   protected <K, V> Map<K, V> create() {
-    TestMap<K, V> inner = new TestMap<K, V>(new HashMap<K, V>(), mutex);
+    TestMap<K, V> inner = new TestMap<>(new HashMap<K, V>(), mutex);
     Map<K, V> outer = Synchronized.map(inner, mutex);
     return outer;
   }
 
-  static class TestMap<K, V> extends ForwardingMap<K, V>
-      implements Serializable {
+  static class TestMap<K, V> extends ForwardingMap<K, V> implements Serializable {
     public final Object mutex;
     private Map<K, V> delegate;
+
     public TestMap(Map<K, V> delegate, Object mutex) {
       checkNotNull(mutex);
       this.delegate = delegate;
       this.mutex = mutex;
     }
 
-    @Override protected Map<K, V> delegate() {
+    @Override
+    protected Map<K, V> delegate() {
       return delegate;
     }
 
-    @Override public int size() {
+    @Override
+    public int size() {
       assertTrue(Thread.holdsLock(mutex));
       return super.size();
     }
 
-    @Override public boolean isEmpty() {
+    @Override
+    public boolean isEmpty() {
       assertTrue(Thread.holdsLock(mutex));
       return super.isEmpty();
     }
 
-    @Override public V remove(Object object) {
+    @Override
+    public V remove(Object object) {
       assertTrue(Thread.holdsLock(mutex));
       return super.remove(object);
     }
 
-    @Override public void clear() {
+    @Override
+    public void clear() {
       assertTrue(Thread.holdsLock(mutex));
       super.clear();
     }
 
-    @Override public boolean containsKey(Object key) {
+    @Override
+    public boolean containsKey(Object key) {
       assertTrue(Thread.holdsLock(mutex));
       return super.containsKey(key);
     }
 
-    @Override public boolean containsValue(Object value) {
+    @Override
+    public boolean containsValue(Object value) {
       assertTrue(Thread.holdsLock(mutex));
       return super.containsValue(value);
     }
 
-    @Override public V get(Object key) {
+    @Override
+    public V get(Object key) {
       assertTrue(Thread.holdsLock(mutex));
       return super.get(key);
     }
 
-    @Override public V put(K key, V value) {
+    @Override
+    public V put(K key, V value) {
       assertTrue(Thread.holdsLock(mutex));
       return super.put(key, value);
     }
 
-    @Override public void putAll(Map<? extends K, ? extends V> map) {
+    @Override
+    public void putAll(Map<? extends K, ? extends V> map) {
       assertTrue(Thread.holdsLock(mutex));
       super.putAll(map);
     }
 
-    @Override public Set<K> keySet() {
+    @Override
+    public Set<K> keySet() {
       assertTrue(Thread.holdsLock(mutex));
       return super.keySet();
     }
 
-    @Override public Collection<V> values() {
+    @Override
+    public Collection<V> values() {
       assertTrue(Thread.holdsLock(mutex));
       return super.values();
     }
 
-    @Override public Set<Entry<K, V>> entrySet() {
+    @Override
+    public Set<Entry<K, V>> entrySet() {
       assertTrue(Thread.holdsLock(mutex));
       return super.entrySet();
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
       assertTrue(Thread.holdsLock(mutex));
       return super.equals(obj);
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
       assertTrue(Thread.holdsLock(mutex));
       return super.hashCode();
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       assertTrue(Thread.holdsLock(mutex));
       return super.toString();
     }
@@ -158,11 +175,11 @@ public class SynchronizedMapTest extends TestCase {
   }
 
   public void testContainsKey() {
-    create().containsKey(null);
+    boolean unused = create().containsKey(null);
   }
 
   public void testContainsValue() {
-    create().containsValue(null);
+    boolean unused = create().containsValue(null);
   }
 
   public void testGet() {
@@ -193,7 +210,7 @@ public class SynchronizedMapTest extends TestCase {
 
   public void testEntrySet() {
     Map<String, Integer> map = create();
-    Set<Map.Entry<String, Integer>> entrySet = map.entrySet();
+    Set<Entry<String, Integer>> entrySet = map.entrySet();
     assertTrue(entrySet instanceof SynchronizedSet);
     assertSame(mutex, ((SynchronizedSet<?>) entrySet).mutex);
   }

@@ -36,9 +36,6 @@ enum QuantilesAlgorithm {
   /**
    * Sorts the dataset, and picks values from it. When computing multiple quantiles, we sort once
    * and pick multiple values.
-   *
-   * <p>This is basically equivalent to the legacy {@code com.google.math.Sample}, except that does
-   * a copy whereas this is in-place.
    */
   SORTING {
 
@@ -75,8 +72,6 @@ enum QuantilesAlgorithm {
 
   /**
    * Uses quickselect. When calculating multiple quantiles, each quickselect starts from scratch.
-   *
-   * <p>This is basically equivalent to the legacy {@code com.google.math.Rank}.
    */
   QUICKSELECT {
 
@@ -91,8 +86,7 @@ enum QuantilesAlgorithm {
       } else {
         double percentileCeiling = getMinValue(dataset, positionFloor + 1);
         double positionFrac = (double) remainder / scale;
-        return percentileFloor
-            + positionFrac * (percentileCeiling - percentileFloor);
+        return percentileFloor + positionFrac * (percentileCeiling - percentileFloor);
       }
     }
 
@@ -107,9 +101,7 @@ enum QuantilesAlgorithm {
     }
   },
 
-  /**
-   * Uses {@link Quantiles}.
-   */
+  /** Uses {@link Quantiles}. */
   TARGET {
 
     @Override
@@ -126,14 +118,14 @@ enum QuantilesAlgorithm {
   ;
 
   /**
-   * Calculates a single quantile. Equivalent to
-   * {@code Quantiles.scale(scale).index(index).computeInPlace(dataset)}.
+   * Calculates a single quantile. Equivalent to {@code
+   * Quantiles.scale(scale).index(index).computeInPlace(dataset)}.
    */
   abstract double singleQuantile(int index, int scale, double[] dataset);
 
   /**
-   * Calculates multiple quantiles. Equivalent to
-   * {@code Quantiles.scale(scale).indexes(indexes).computeInPlace(dataset)}.
+   * Calculates multiple quantiles. Equivalent to {@code
+   * Quantiles.scale(scale).indexes(indexes).computeInPlace(dataset)}.
    */
   abstract Map<Integer, Double> multipleQuantiles(
       Collection<Integer> indexes, int scale, double[] dataset);

@@ -27,6 +27,8 @@ import com.google.common.collect.testing.features.MapFeature;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import org.junit.Ignore;
 
 /**
  * Tests {@link java.util.Map#equals}.
@@ -35,6 +37,7 @@ import java.util.Map;
  * @author Chris Povirk
  */
 @GwtCompatible
+@Ignore // Affects only Android test runner, which respects JUnit 4 annotations on JUnit 3 tests.
 public class MapEqualsTester<K, V> extends AbstractMapTester<K, V> {
   public void testEquals_otherMapWithSameEntries() {
     assertTrue(
@@ -53,7 +56,7 @@ public class MapEqualsTester<K, V> extends AbstractMapTester<K, V> {
   @CollectionSize.Require(absent = CollectionSize.ZERO)
   @MapFeature.Require(ALLOWS_NULL_KEYS)
   public void testEquals_containingNullKey() {
-    Collection<Map.Entry<K, V>> entries = getSampleEntries(getNumEntries() - 1);
+    Collection<Entry<K, V>> entries = getSampleEntries(getNumEntries() - 1);
     entries.add(entry(null, v3()));
 
     resetContainer(getSubjectGenerator().create(entries.toArray()));
@@ -65,7 +68,7 @@ public class MapEqualsTester<K, V> extends AbstractMapTester<K, V> {
 
   @CollectionSize.Require(absent = CollectionSize.ZERO)
   public void testEquals_otherContainsNullKey() {
-    Collection<Map.Entry<K, V>> entries = getSampleEntries(getNumEntries() - 1);
+    Collection<Entry<K, V>> entries = getSampleEntries(getNumEntries() - 1);
     entries.add(entry(null, v3()));
     Map<K, V> other = newHashMap(entries);
 
@@ -77,7 +80,7 @@ public class MapEqualsTester<K, V> extends AbstractMapTester<K, V> {
   @CollectionSize.Require(absent = CollectionSize.ZERO)
   @MapFeature.Require(ALLOWS_NULL_VALUES)
   public void testEquals_containingNullValue() {
-    Collection<Map.Entry<K, V>> entries = getSampleEntries(getNumEntries() - 1);
+    Collection<Entry<K, V>> entries = getSampleEntries(getNumEntries() - 1);
     entries.add(entry(k3(), null));
 
     resetContainer(getSubjectGenerator().create(entries.toArray()));
@@ -89,7 +92,7 @@ public class MapEqualsTester<K, V> extends AbstractMapTester<K, V> {
 
   @CollectionSize.Require(absent = CollectionSize.ZERO)
   public void testEquals_otherContainsNullValue() {
-    Collection<Map.Entry<K, V>> entries = getSampleEntries(getNumEntries() - 1);
+    Collection<Entry<K, V>> entries = getSampleEntries(getNumEntries() - 1);
     entries.add(entry(k3(), null));
     Map<K, V> other = newHashMap(entries);
 
@@ -100,13 +103,13 @@ public class MapEqualsTester<K, V> extends AbstractMapTester<K, V> {
 
   @CollectionSize.Require(absent = CollectionSize.ZERO)
   public void testEquals_smallerMap() {
-    Collection<Map.Entry<K, V>> fewerEntries = getSampleEntries(getNumEntries() - 1);
+    Collection<Entry<K, V>> fewerEntries = getSampleEntries(getNumEntries() - 1);
     assertFalse(
         "Maps of different sizes should not be equal.", getMap().equals(newHashMap(fewerEntries)));
   }
 
   public void testEquals_largerMap() {
-    Collection<Map.Entry<K, V>> moreEntries = getSampleEntries(getNumEntries() + 1);
+    Collection<Entry<K, V>> moreEntries = getSampleEntries(getNumEntries() + 1);
     assertFalse(
         "Maps of different sizes should not be equal.", getMap().equals(newHashMap(moreEntries)));
   }
@@ -118,9 +121,9 @@ public class MapEqualsTester<K, V> extends AbstractMapTester<K, V> {
   }
 
   private static <K, V> HashMap<K, V> newHashMap(
-      Collection<? extends Map.Entry<? extends K, ? extends V>> entries) {
-    HashMap<K, V> map = new HashMap<K, V>();
-    for (Map.Entry<? extends K, ? extends V> entry : entries) {
+      Collection<? extends Entry<? extends K, ? extends V>> entries) {
+    HashMap<K, V> map = new HashMap<>();
+    for (Entry<? extends K, ? extends V> entry : entries) {
       map.put(entry.getKey(), entry.getValue());
     }
     return map;

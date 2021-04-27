@@ -21,7 +21,6 @@ import com.google.common.collect.testing.Helpers;
 import com.google.common.collect.testing.SampleElements;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 /**
@@ -34,8 +33,8 @@ public abstract class TestStringSetMultimapGenerator
     implements TestSetMultimapGenerator<String, String> {
 
   @Override
-  public SampleElements<Map.Entry<String, String>> samples() {
-    return new SampleElements<Map.Entry<String, String>>(
+  public SampleElements<Entry<String, String>> samples() {
+    return new SampleElements<>(
         Helpers.mapEntry("one", "January"),
         Helpers.mapEntry("two", "February"),
         Helpers.mapEntry("three", "March"),
@@ -45,12 +44,12 @@ public abstract class TestStringSetMultimapGenerator
 
   @Override
   public SampleElements<String> sampleKeys() {
-    return new SampleElements<String>("one", "two", "three", "four", "five");
+    return new SampleElements<>("one", "two", "three", "four", "five");
   }
 
   @Override
   public SampleElements<String> sampleValues() {
-    return new SampleElements<String>("January", "February", "March", "April", "May");
+    return new SampleElements<>("January", "February", "March", "April", "May");
   }
 
   @Override

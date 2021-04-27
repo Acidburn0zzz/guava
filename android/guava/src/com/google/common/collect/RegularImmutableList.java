@@ -29,7 +29,7 @@ import com.google.common.annotations.VisibleForTesting;
 @GwtCompatible(serializable = true, emulated = true)
 @SuppressWarnings("serial") // uses writeReplace(), not default serialization
 class RegularImmutableList<E> extends ImmutableList<E> {
-  static final ImmutableList<Object> EMPTY = new RegularImmutableList<Object>(new Object[0], 0);
+  static final ImmutableList<Object> EMPTY = new RegularImmutableList<>(new Object[0], 0);
 
   @VisibleForTesting final transient Object[] array;
   private final transient int size;
@@ -50,6 +50,21 @@ class RegularImmutableList<E> extends ImmutableList<E> {
   }
 
   @Override
+  Object[] internalArray() {
+    return array;
+  }
+
+  @Override
+  int internalArrayStart() {
+    return 0;
+  }
+
+  @Override
+  int internalArrayEnd() {
+    return size;
+  }
+
+  @Override
   int copyIntoArray(Object[] dst, int dstOff) {
     System.arraycopy(array, 0, dst, dstOff, size);
     return dstOff + size;
@@ -61,14 +76,6 @@ class RegularImmutableList<E> extends ImmutableList<E> {
   public E get(int index) {
     checkElementIndex(index, size);
     return (E) array[index];
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public UnmodifiableListIterator<E> listIterator(int index) {
-    // for performance
-    // The fake cast to E is safe because the creation methods only allow E's
-    return (UnmodifiableListIterator<E>) Iterators.forArray(array, 0, size, index);
   }
 
   // TODO(lowasser): benchmark optimizations for equals() and see if they're worthwhile

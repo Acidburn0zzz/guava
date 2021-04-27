@@ -32,28 +32,45 @@ import java.nio.ByteOrder;
  * @author Colin Decker
  */
 @CanIgnoreReturnValue
+@ElementTypesAreNonnullByDefault
 abstract class AbstractByteHasher extends AbstractHasher {
   private final ByteBuffer scratch = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN);
 
-  /**
-   * Updates this hasher with the given byte.
-   */
+  /** Updates this hasher with the given byte. */
   protected abstract void update(byte b);
 
-  /**
-   * Updates this hasher with the given bytes.
-   */
+  /** Updates this hasher with the given bytes. */
   protected void update(byte[] b) {
     update(b, 0, b.length);
   }
 
-  /**
-   * Updates this hasher with {@code len} bytes starting at {@code off} in the given buffer.
-   */
+  /** Updates this hasher with {@code len} bytes starting at {@code off} in the given buffer. */
   protected void update(byte[] b, int off, int len) {
     for (int i = off; i < off + len; i++) {
       update(b[i]);
     }
+  }
+
+  /** Updates this hasher with bytes from the given buffer. */
+  protected void update(ByteBuffer b) {
+    if (b.hasArray()) {
+      update(b.array(), b.arrayOffset() + b.position(), b.remaining());
+      Java8Compatibility.position(b, b.limit());
+    } else {
+      for (int remaining = b.remaining(); remaining > 0; remaining--) {
+        update(b.get());
+      }
+    }
+  }
+
+  /** Updates the sink with the given number of bytes from the buffer. */
+  private Hasher update(int bytes) {
+    try {
+      update(scratch.array(), 0, bytes);
+    } finally {
+      Java8Compatibility.clear(scratch);
+    }
+    return this;
   }
 
   @Override
@@ -76,15 +93,9 @@ abstract class AbstractByteHasher extends AbstractHasher {
     return this;
   }
 
-  /**
-   * Updates the sink with the given number of bytes from the buffer.
-   */
-  private Hasher update(int bytes) {
-    try {
-      update(scratch.array(), 0, bytes);
-    } finally {
-      scratch.clear();
-    }
+  @Override
+  public Hasher putBytes(ByteBuffer bytes) {
+    update(bytes);
     return this;
   }
 
@@ -110,11 +121,5 @@ abstract class AbstractByteHasher extends AbstractHasher {
   public Hasher putChar(char c) {
     scratch.putChar(c);
     return update(Chars.BYTES);
-  }
-
-  @Override
-  public <T> Hasher putObject(T instance, Funnel<? super T> funnel) {
-    funnel.funnel(instance, this);
-    return this;
   }
 }

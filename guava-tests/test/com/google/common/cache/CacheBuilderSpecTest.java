@@ -26,8 +26,8 @@ import java.util.concurrent.TimeUnit;
 import junit.framework.TestCase;
 
 /**
- * Tests CacheBuilderSpec.
- * TODO(user): tests of a few invalid input conditions, boundary conditions.
+ * Tests CacheBuilderSpec. TODO(user): tests of a few invalid input conditions, boundary
+ * conditions.
  *
  * @author Adam Winer
  */
@@ -64,7 +64,6 @@ public class CacheBuilderSpecTest extends TestCase {
       parse("initialCapacity=10, initialCapacity=20");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -86,7 +85,6 @@ public class CacheBuilderSpecTest extends TestCase {
       parse("maximumSize=10, maximumSize=20");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -108,7 +106,6 @@ public class CacheBuilderSpecTest extends TestCase {
       parse("maximumWeight=10, maximumWeight=20");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -117,7 +114,6 @@ public class CacheBuilderSpecTest extends TestCase {
       parse("maximumSize=10, maximumWeight=20");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -140,7 +136,6 @@ public class CacheBuilderSpecTest extends TestCase {
       parse("concurrencyLevel=10, concurrencyLevel=20");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -154,8 +149,7 @@ public class CacheBuilderSpecTest extends TestCase {
     assertNull(spec.valueStrength);
     assertNull(spec.writeExpirationTimeUnit);
     assertNull(spec.accessExpirationTimeUnit);
-    assertCacheBuilderEquivalence(
-        CacheBuilder.newBuilder().weakKeys(), CacheBuilder.from(spec));
+    assertCacheBuilderEquivalence(CacheBuilder.newBuilder().weakKeys(), CacheBuilder.from(spec));
   }
 
   public void testParse_weakKeysCannotHaveValue() {
@@ -163,7 +157,6 @@ public class CacheBuilderSpecTest extends TestCase {
       parse("weakKeys=true");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -172,7 +165,6 @@ public class CacheBuilderSpecTest extends TestCase {
       parse("weakKeys, weakKeys");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -186,8 +178,7 @@ public class CacheBuilderSpecTest extends TestCase {
     assertEquals(Strength.SOFT, spec.valueStrength);
     assertNull(spec.writeExpirationTimeUnit);
     assertNull(spec.accessExpirationTimeUnit);
-    assertCacheBuilderEquivalence(
-        CacheBuilder.newBuilder().softValues(), CacheBuilder.from(spec));
+    assertCacheBuilderEquivalence(CacheBuilder.newBuilder().softValues(), CacheBuilder.from(spec));
   }
 
   public void testParse_softValuesCannotHaveValue() {
@@ -195,7 +186,6 @@ public class CacheBuilderSpecTest extends TestCase {
       parse("softValues=true");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -209,8 +199,7 @@ public class CacheBuilderSpecTest extends TestCase {
     assertEquals(Strength.WEAK, spec.valueStrength);
     assertNull(spec.writeExpirationTimeUnit);
     assertNull(spec.accessExpirationTimeUnit);
-    assertCacheBuilderEquivalence(
-        CacheBuilder.newBuilder().weakValues(), CacheBuilder.from(spec));
+    assertCacheBuilderEquivalence(CacheBuilder.newBuilder().weakValues(), CacheBuilder.from(spec));
   }
 
   public void testParse_weakValuesCannotHaveValue() {
@@ -218,7 +207,6 @@ public class CacheBuilderSpecTest extends TestCase {
       parse("weakValues=true");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -227,28 +215,24 @@ public class CacheBuilderSpecTest extends TestCase {
       parse("softValues, softValues");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
 
     try {
       parse("softValues, weakValues");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
 
     try {
       parse("weakValues, softValues");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
 
     try {
       parse("weakValues, weakValues");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -293,11 +277,9 @@ public class CacheBuilderSpecTest extends TestCase {
 
   public void testParse_writeExpirationRepeated() {
     try {
-      parse(
-          "expireAfterWrite=10s,expireAfterWrite=10m");
+      parse("expireAfterWrite=10s,expireAfterWrite=10m");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -344,11 +326,9 @@ public class CacheBuilderSpecTest extends TestCase {
 
   public void testParse_accessExpirationRepeated() {
     try {
-      parse(
-          "expireAfterAccess=10s,expireAfterAccess=10m");
+      parse("expireAfterAccess=10s,expireAfterAccess=10m");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -363,7 +343,6 @@ public class CacheBuilderSpecTest extends TestCase {
       parse("recordStats=True");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -372,7 +351,6 @@ public class CacheBuilderSpecTest extends TestCase {
       parse("recordStats,recordStats");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -384,14 +362,16 @@ public class CacheBuilderSpecTest extends TestCase {
     assertEquals(10L, spec.accessExpirationDuration);
     assertCacheBuilderEquivalence(
         CacheBuilder.newBuilder()
-          .expireAfterAccess(10L, TimeUnit.SECONDS)
-          .expireAfterWrite(9L, TimeUnit.MINUTES),
+            .expireAfterAccess(10L, TimeUnit.SECONDS)
+            .expireAfterWrite(9L, TimeUnit.MINUTES),
         CacheBuilder.from(spec));
   }
 
   public void testParse_multipleKeys() {
-    CacheBuilderSpec spec = parse("initialCapacity=10,maximumSize=20,concurrencyLevel=30,"
-        + "weakKeys,weakValues,expireAfterAccess=10m,expireAfterWrite=1h");
+    CacheBuilderSpec spec =
+        parse(
+            "initialCapacity=10,maximumSize=20,concurrencyLevel=30,"
+                + "weakKeys,weakValues,expireAfterAccess=10m,expireAfterWrite=1h");
     assertEquals(10, spec.initialCapacity.intValue());
     assertEquals(20, spec.maximumSize.intValue());
     assertNull(spec.maximumWeight);
@@ -402,20 +382,23 @@ public class CacheBuilderSpecTest extends TestCase {
     assertEquals(TimeUnit.MINUTES, spec.accessExpirationTimeUnit);
     assertEquals(1L, spec.writeExpirationDuration);
     assertEquals(10L, spec.accessExpirationDuration);
-    CacheBuilder<?, ?> expected = CacheBuilder.newBuilder()
-        .initialCapacity(10)
-        .maximumSize(20)
-        .concurrencyLevel(30)
-        .weakKeys()
-        .weakValues()
-        .expireAfterAccess(10L, TimeUnit.MINUTES)
-        .expireAfterWrite(1L, TimeUnit.HOURS);
+    CacheBuilder<?, ?> expected =
+        CacheBuilder.newBuilder()
+            .initialCapacity(10)
+            .maximumSize(20)
+            .concurrencyLevel(30)
+            .weakKeys()
+            .weakValues()
+            .expireAfterAccess(10L, TimeUnit.MINUTES)
+            .expireAfterWrite(1L, TimeUnit.HOURS);
     assertCacheBuilderEquivalence(expected, CacheBuilder.from(spec));
   }
 
   public void testParse_whitespaceAllowed() {
-    CacheBuilderSpec spec = parse(" initialCapacity=10,\nmaximumSize=20,\t\r"
-        + "weakKeys \t ,softValues \n , \r  expireAfterWrite \t =  15s\n\n");
+    CacheBuilderSpec spec =
+        parse(
+            " initialCapacity=10,\nmaximumSize=20,\t\r"
+                + "weakKeys \t ,softValues \n , \r  expireAfterWrite \t =  15s\n\n");
     assertEquals(10, spec.initialCapacity.intValue());
     assertEquals(20, spec.maximumSize.intValue());
     assertNull(spec.maximumWeight);
@@ -425,12 +408,13 @@ public class CacheBuilderSpecTest extends TestCase {
     assertEquals(TimeUnit.SECONDS, spec.writeExpirationTimeUnit);
     assertEquals(15L, spec.writeExpirationDuration);
     assertNull(spec.accessExpirationTimeUnit);
-    CacheBuilder<?, ?> expected = CacheBuilder.newBuilder()
-        .initialCapacity(10)
-        .maximumSize(20)
-        .weakKeys()
-        .softValues()
-        .expireAfterWrite(15L, TimeUnit.SECONDS);
+    CacheBuilder<?, ?> expected =
+        CacheBuilder.newBuilder()
+            .initialCapacity(10)
+            .maximumSize(20)
+            .weakKeys()
+            .softValues()
+            .expireAfterWrite(15L, TimeUnit.SECONDS);
     assertCacheBuilderEquivalence(expected, CacheBuilder.from(spec));
   }
 
@@ -439,7 +423,6 @@ public class CacheBuilderSpecTest extends TestCase {
       parse("foo=17");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -448,21 +431,18 @@ public class CacheBuilderSpecTest extends TestCase {
       parse("weakKeys,");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
 
     try {
       parse(",weakKeys");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
 
     try {
       parse("weakKeys,,softValues");
       fail("Expected exception");
     } catch (IllegalArgumentException expected) {
-      // expected
     }
   }
 
@@ -488,28 +468,29 @@ public class CacheBuilderSpecTest extends TestCase {
         .testEquals();
   }
 
+  @SuppressWarnings("ReturnValueIgnored")
   public void testMaximumWeight_withWeigher() {
     CacheBuilder<Object, Object> builder = CacheBuilder.from(parse("maximumWeight=9000"));
-    builder
-        .weigher(constantWeigher(42))
-        .build(CacheLoader.from(Suppliers.ofInstance(null)));
+    builder.weigher(constantWeigher(42)).build(CacheLoader.from(Suppliers.ofInstance(null)));
   }
 
+  @SuppressWarnings("ReturnValueIgnored")
   public void testMaximumWeight_withoutWeigher() {
     CacheBuilder<Object, Object> builder = CacheBuilder.from(parse("maximumWeight=9000"));
     try {
       builder.build(CacheLoader.from(Suppliers.ofInstance(null)));
       fail();
-    } catch (IllegalStateException expected) {}
+    } catch (IllegalStateException expected) {
+    }
   }
 
+  @SuppressWarnings("ReturnValueIgnored")
   public void testMaximumSize_withWeigher() {
     CacheBuilder<Object, Object> builder = CacheBuilder.from(parse("maximumSize=9000"));
-    builder
-        .weigher(constantWeigher(42))
-        .build(CacheLoader.from(Suppliers.ofInstance(null)));
+    builder.weigher(constantWeigher(42)).build(CacheLoader.from(Suppliers.ofInstance(null)));
   }
 
+  @SuppressWarnings("ReturnValueIgnored")
   public void testMaximumSize_withoutWeigher() {
     CacheBuilder<Object, Object> builder = CacheBuilder.from(parse("maximumSize=9000"));
     builder.build(CacheLoader.from(Suppliers.ofInstance(null)));
@@ -521,24 +502,26 @@ public class CacheBuilderSpecTest extends TestCase {
     CacheBuilder<Object, Object> builder = CacheBuilder.from(CacheBuilderSpec.disableCaching());
     Object key = new Object();
     Object value = new Object();
-    LoadingCache<Object, Object> cache = builder.build(
-        CacheLoader.from(Suppliers.ofInstance(value)));
+    LoadingCache<Object, Object> cache =
+        builder.build(CacheLoader.from(Suppliers.ofInstance(value)));
     assertSame(value, cache.getUnchecked(key));
     assertEquals(0, cache.size());
     assertFalse(cache.asMap().containsKey(key));
   }
 
   public void testCacheBuilderFrom_string() {
-    CacheBuilder<?, ?> fromString = CacheBuilder.from(
-        "initialCapacity=10,maximumSize=20,concurrencyLevel=30,"
-        + "weakKeys,weakValues,expireAfterAccess=10m");
-    CacheBuilder<?, ?> expected = CacheBuilder.newBuilder()
-        .initialCapacity(10)
-        .maximumSize(20)
-        .concurrencyLevel(30)
-        .weakKeys()
-        .weakValues()
-        .expireAfterAccess(10L, TimeUnit.MINUTES);
+    CacheBuilder<?, ?> fromString =
+        CacheBuilder.from(
+            "initialCapacity=10,maximumSize=20,concurrencyLevel=30,"
+                + "weakKeys,weakValues,expireAfterAccess=10m");
+    CacheBuilder<?, ?> expected =
+        CacheBuilder.newBuilder()
+            .initialCapacity(10)
+            .maximumSize(20)
+            .concurrencyLevel(30)
+            .weakKeys()
+            .weakValues()
+            .expireAfterAccess(10L, TimeUnit.MINUTES);
     assertCacheBuilderEquivalence(expected, fromString);
   }
 

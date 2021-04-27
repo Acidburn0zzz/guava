@@ -36,8 +36,8 @@ import java.util.Set;
 import junit.framework.TestSuite;
 
 /**
- * Creates, based on your criteria, a JUnit test suite that exhaustively tests
- * a {@code ListMultimap} implementation.
+ * Creates, based on your criteria, a JUnit test suite that exhaustively tests a {@code
+ * ListMultimap} implementation.
  *
  * @author Louis Wasserman
  */
@@ -47,7 +47,7 @@ public class ListMultimapTestSuiteBuilder<K, V>
 
   public static <K, V> ListMultimapTestSuiteBuilder<K, V> using(
       TestListMultimapGenerator<K, V> generator) {
-    ListMultimapTestSuiteBuilder<K, V> result = new ListMultimapTestSuiteBuilder<K, V>();
+    ListMultimapTestSuiteBuilder<K, V> result = new ListMultimapTestSuiteBuilder<>();
     result.usingGenerator(generator);
     return result;
   }

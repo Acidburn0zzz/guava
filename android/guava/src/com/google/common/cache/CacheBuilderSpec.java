@@ -27,7 +27,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 /**
  * A specification of a {@link CacheBuilder} configuration.
@@ -37,18 +37,19 @@ import javax.annotation.Nullable;
  *
  * <p>The string syntax is a series of comma-separated keys or key-value pairs, each corresponding
  * to a {@code CacheBuilder} method.
+ *
  * <ul>
- * <li>{@code concurrencyLevel=[integer]}: sets {@link CacheBuilder#concurrencyLevel}.
- * <li>{@code initialCapacity=[integer]}: sets {@link CacheBuilder#initialCapacity}.
- * <li>{@code maximumSize=[long]}: sets {@link CacheBuilder#maximumSize}.
- * <li>{@code maximumWeight=[long]}: sets {@link CacheBuilder#maximumWeight}.
- * <li>{@code expireAfterAccess=[duration]}: sets {@link CacheBuilder#expireAfterAccess}.
- * <li>{@code expireAfterWrite=[duration]}: sets {@link CacheBuilder#expireAfterWrite}.
- * <li>{@code refreshAfterWrite=[duration]}: sets {@link CacheBuilder#refreshAfterWrite}.
- * <li>{@code weakKeys}: sets {@link CacheBuilder#weakKeys}.
- * <li>{@code softValues}: sets {@link CacheBuilder#softValues}.
- * <li>{@code weakValues}: sets {@link CacheBuilder#weakValues}.
- * <li>{@code recordStats}: sets {@link CacheBuilder#recordStats}.
+ *   <li>{@code concurrencyLevel=[integer]}: sets {@link CacheBuilder#concurrencyLevel}.
+ *   <li>{@code initialCapacity=[integer]}: sets {@link CacheBuilder#initialCapacity}.
+ *   <li>{@code maximumSize=[long]}: sets {@link CacheBuilder#maximumSize}.
+ *   <li>{@code maximumWeight=[long]}: sets {@link CacheBuilder#maximumWeight}.
+ *   <li>{@code expireAfterAccess=[duration]}: sets {@link CacheBuilder#expireAfterAccess}.
+ *   <li>{@code expireAfterWrite=[duration]}: sets {@link CacheBuilder#expireAfterWrite}.
+ *   <li>{@code refreshAfterWrite=[duration]}: sets {@link CacheBuilder#refreshAfterWrite}.
+ *   <li>{@code weakKeys}: sets {@link CacheBuilder#weakKeys}.
+ *   <li>{@code softValues}: sets {@link CacheBuilder#softValues}.
+ *   <li>{@code weakValues}: sets {@link CacheBuilder#weakValues}.
+ *   <li>{@code recordStats}: sets {@link CacheBuilder#recordStats}.
  * </ul>
  *
  * <p>The set of supported keys will grow as {@code CacheBuilder} evolves, but existing keys will
@@ -60,25 +61,27 @@ import javax.annotation.Nullable;
  *
  * <p>Whitespace before and after commas and equal signs is ignored. Keys may not be repeated; it is
  * also illegal to use the following pairs of keys in a single value:
+ *
  * <ul>
- * <li>{@code maximumSize} and {@code maximumWeight}
- * <li>{@code softValues} and {@code weakValues}
+ *   <li>{@code maximumSize} and {@code maximumWeight}
+ *   <li>{@code softValues} and {@code weakValues}
  * </ul>
  *
  * <p>{@code CacheBuilderSpec} does not support configuring {@code CacheBuilder} methods with
  * non-value parameters. These must be configured in code.
  *
- * <p>A new {@code CacheBuilder} can be instantiated from a {@code CacheBuilderSpec} using
- * {@link CacheBuilder#from(CacheBuilderSpec)} or {@link CacheBuilder#from(String)}.
+ * <p>A new {@code CacheBuilder} can be instantiated from a {@code CacheBuilderSpec} using {@link
+ * CacheBuilder#from(CacheBuilderSpec)} or {@link CacheBuilder#from(String)}.
  *
  * @author Adam Winer
  * @since 12.0
  */
+@SuppressWarnings("GoodTime") // lots of violations (nanosecond math)
 @GwtIncompatible
 public final class CacheBuilderSpec {
   /** Parses a single value. */
   private interface ValueParser {
-    void parse(CacheBuilderSpec spec, String key, @Nullable String value);
+    void parse(CacheBuilderSpec spec, String key, @NullableDecl String value);
   }
 
   /** Splits each key-value pair. */
@@ -104,19 +107,19 @@ public final class CacheBuilderSpec {
           .put("refreshInterval", new RefreshDurationParser())
           .build();
 
-  @VisibleForTesting Integer initialCapacity;
-  @VisibleForTesting Long maximumSize;
-  @VisibleForTesting Long maximumWeight;
-  @VisibleForTesting Integer concurrencyLevel;
-  @VisibleForTesting Strength keyStrength;
-  @VisibleForTesting Strength valueStrength;
-  @VisibleForTesting Boolean recordStats;
+  @VisibleForTesting @NullableDecl Integer initialCapacity;
+  @VisibleForTesting @NullableDecl Long maximumSize;
+  @VisibleForTesting @NullableDecl Long maximumWeight;
+  @VisibleForTesting @NullableDecl Integer concurrencyLevel;
+  @VisibleForTesting @NullableDecl Strength keyStrength;
+  @VisibleForTesting @NullableDecl Strength valueStrength;
+  @VisibleForTesting @NullableDecl Boolean recordStats;
   @VisibleForTesting long writeExpirationDuration;
-  @VisibleForTesting TimeUnit writeExpirationTimeUnit;
+  @VisibleForTesting @NullableDecl TimeUnit writeExpirationTimeUnit;
   @VisibleForTesting long accessExpirationDuration;
-  @VisibleForTesting TimeUnit accessExpirationTimeUnit;
+  @VisibleForTesting @NullableDecl TimeUnit accessExpirationTimeUnit;
   @VisibleForTesting long refreshDuration;
-  @VisibleForTesting TimeUnit refreshTimeUnit;
+  @VisibleForTesting @NullableDecl TimeUnit refreshTimeUnit;
   /** Specification; used for toParseableString(). */
   private final String specification;
 
@@ -153,17 +156,13 @@ public final class CacheBuilderSpec {
     return spec;
   }
 
-  /**
-   * Returns a CacheBuilderSpec that will prevent caching.
-   */
+  /** Returns a CacheBuilderSpec that will prevent caching. */
   public static CacheBuilderSpec disableCaching() {
     // Maximum size of zero is one way to block caching
     return CacheBuilderSpec.parse("maximumSize=0");
   }
 
-  /**
-   * Returns a CacheBuilder configured according to this instance's specification.
-   */
+  /** Returns a CacheBuilder configured according to this instance's specification. */
   CacheBuilder<Object, Object> toCacheBuilder() {
     CacheBuilder<Object, Object> builder = CacheBuilder.newBuilder();
     if (initialCapacity != null) {
@@ -249,7 +248,7 @@ public final class CacheBuilderSpec {
   }
 
   @Override
-  public boolean equals(@Nullable Object obj) {
+  public boolean equals(@NullableDecl Object obj) {
     if (this == obj) {
       return true;
     }
@@ -279,8 +278,8 @@ public final class CacheBuilderSpec {
    * Converts an expiration duration/unit pair into a single Long for hashing and equality. Uses
    * nanos to match CacheBuilder implementation.
    */
-  @Nullable
-  private static Long durationInNanos(long duration, @Nullable TimeUnit unit) {
+  @NullableDecl
+  private static Long durationInNanos(long duration, @NullableDecl TimeUnit unit) {
     return (unit == null) ? null : unit.toNanos(duration);
   }
 
@@ -371,7 +370,7 @@ public final class CacheBuilderSpec {
     }
 
     @Override
-    public void parse(CacheBuilderSpec spec, String key, @Nullable String value) {
+    public void parse(CacheBuilderSpec spec, String key, @NullableDecl String value) {
       checkArgument(value == null, "key %s does not take values", key);
       checkArgument(spec.keyStrength == null, "%s was already set to %s", key, spec.keyStrength);
       spec.keyStrength = strength;
@@ -387,7 +386,7 @@ public final class CacheBuilderSpec {
     }
 
     @Override
-    public void parse(CacheBuilderSpec spec, String key, @Nullable String value) {
+    public void parse(CacheBuilderSpec spec, String key, @NullableDecl String value) {
       checkArgument(value == null, "key %s does not take values", key);
       checkArgument(
           spec.valueStrength == null, "%s was already set to %s", key, spec.valueStrength);
@@ -400,7 +399,7 @@ public final class CacheBuilderSpec {
   static class RecordStatsParser implements ValueParser {
 
     @Override
-    public void parse(CacheBuilderSpec spec, String key, @Nullable String value) {
+    public void parse(CacheBuilderSpec spec, String key, @NullableDecl String value) {
       checkArgument(value == null, "recordStats does not take values");
       checkArgument(spec.recordStats == null, "recordStats already set");
       spec.recordStats = true;
@@ -432,8 +431,7 @@ public final class CacheBuilderSpec {
             break;
           default:
             throw new IllegalArgumentException(
-                format(
-                    "key %s invalid format.  was %s, must end with one of [dDhHmMsS]", key, value));
+                format("key %s invalid unit: was %s, must end with one of [dhms]", key, value));
         }
 
         long duration = Long.parseLong(value.substring(0, value.length() - 1));

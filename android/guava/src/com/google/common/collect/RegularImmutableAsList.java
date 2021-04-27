@@ -20,8 +20,8 @@ import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
 
 /**
- * An {@link ImmutableAsList} implementation specialized for when the delegate collection is
- * already backed by an {@code ImmutableList} or array.
+ * An {@link ImmutableAsList} implementation specialized for when the delegate collection is already
+ * backed by an {@code ImmutableList} or array.
  *
  * @author Louis Wasserman
  */
@@ -63,6 +63,21 @@ class RegularImmutableAsList<E> extends ImmutableAsList<E> {
   @Override
   int copyIntoArray(Object[] dst, int offset) {
     return delegateList.copyIntoArray(dst, offset);
+  }
+
+  @Override
+  Object[] internalArray() {
+    return delegateList.internalArray();
+  }
+
+  @Override
+  int internalArrayStart() {
+    return delegateList.internalArrayStart();
+  }
+
+  @Override
+  int internalArrayEnd() {
+    return delegateList.internalArrayEnd();
   }
 
   @Override

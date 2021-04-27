@@ -21,12 +21,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.collect.Lists;
+import com.google.errorprone.annotations.concurrent.GuardedBy;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.concurrent.GuardedBy;
 
 /**
  * A {@code TearDownStack} contains a stack of {@link TearDown} instances.
@@ -42,7 +42,7 @@ public class TearDownStack implements TearDownAccepter {
   private static final Logger logger = Logger.getLogger(TearDownStack.class.getName());
 
   @GuardedBy("stack")
-  final LinkedList<TearDown> stack = new LinkedList<TearDown>();
+  final LinkedList<TearDown> stack = new LinkedList<>();
 
   private final boolean suppressThrows;
 
@@ -61,11 +61,9 @@ public class TearDownStack implements TearDownAccepter {
     }
   }
 
-  /**
-   * Causes teardown to execute.
-   */
+  /** Causes teardown to execute. */
   public final void runTearDown() {
-    List<Throwable> exceptions = new ArrayList<Throwable>();
+    List<Throwable> exceptions = new ArrayList<>();
     List<TearDown> stackCopy;
     synchronized (stack) {
       stackCopy = Lists.newArrayList(stack);
@@ -82,7 +80,7 @@ public class TearDownStack implements TearDownAccepter {
         }
       }
     }
-    if ((!suppressThrows) && (exceptions.size() > 0)) {
+    if (!suppressThrows && (exceptions.size() > 0)) {
       throw ClusterException.create(exceptions);
     }
   }

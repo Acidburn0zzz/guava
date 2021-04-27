@@ -19,7 +19,6 @@ package com.google.common.util.concurrent;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.testing.TearDownStack;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import junit.framework.TestCase;
 
 /**
@@ -38,7 +37,8 @@ public abstract class MonitorTestCase extends TestCase {
       this.satisfied = satisfied;
     }
 
-    @Override public boolean isSatisfied() {
+    @Override
+    public boolean isSatisfied() {
       return this.satisfied;
     }
 
@@ -57,14 +57,16 @@ public abstract class MonitorTestCase extends TestCase {
     this.interruptible = interruptible;
   }
 
-  @Override protected final void setUp() throws Exception {
+  @Override
+  protected final void setUp() throws Exception {
     boolean fair = new Random().nextBoolean();
     monitor = new Monitor(fair);
-    tearDownStack.addTearDown(thread1 = new TestThread<Monitor>(monitor, "TestThread #1"));
-    tearDownStack.addTearDown(thread2 = new TestThread<Monitor>(monitor, "TestThread #2"));
+    tearDownStack.addTearDown(thread1 = new TestThread<>(monitor, "TestThread #1"));
+    tearDownStack.addTearDown(thread2 = new TestThread<>(monitor, "TestThread #2"));
   }
 
-  @Override protected final void tearDown() {
+  @Override
+  protected final void tearDown() {
     tearDownStack.runTearDown();
   }
 
@@ -218,9 +220,8 @@ public abstract class MonitorTestCase extends TestCase {
   }
 
   public void testNulls() {
-    monitor.enter();  // Inhibit IllegalMonitorStateException
+    monitor.enter(); // Inhibit IllegalMonitorStateException
     new NullPointerTester()
-        .setDefault(TimeUnit.class, TimeUnit.SECONDS)
         .setDefault(Monitor.Guard.class, new TestGuard(true))
         .testAllPublicInstanceMethods(monitor);
   }

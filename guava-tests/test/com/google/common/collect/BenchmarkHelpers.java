@@ -42,11 +42,13 @@ final class BenchmarkHelpers {
   /** So far, this is the best way to test various implementations of {@link Set} subclasses. */
   public interface CollectionsImplEnum {
     <E extends Comparable<E>> Collection<E> create(Collection<E> contents);
+
     String name();
   }
 
   public interface MapsImplEnum {
     <K extends Comparable<K>, V> Map<K, V> create(Map<K, V> contents);
+
     String name();
   }
 
@@ -198,7 +200,7 @@ final class BenchmarkHelpers {
     ConcurrentHashMapImpl {
       @Override
       public <K extends Comparable<K>, V> Map<K, V> create(Map<K, V> map) {
-        return new ConcurrentHashMap<K, V>(map);
+        return new ConcurrentHashMap<>(map);
       }
     },
     ImmutableMapImpl {
@@ -258,7 +260,7 @@ final class BenchmarkHelpers {
     ConcurrentSkipListImpl {
       @Override
       public <K extends Comparable<K>, V> SortedMap<K, V> create(Map<K, V> map) {
-        return new ConcurrentSkipListMap<K, V>(map);
+        return new ConcurrentSkipListMap<>(map);
       }
     },
     ImmutableSortedMapImpl {
@@ -374,8 +376,8 @@ final class BenchmarkHelpers {
       }
     };
 
-    abstract <R extends Comparable<R>, C extends Comparable<C>, V>
-        Table<R, C, V> create(Table<R, C, V> contents);
+    abstract <R extends Comparable<R>, C extends Comparable<C>, V> Table<R, C, V> create(
+        Table<R, C, V> contents);
   }
 
   public enum InternerImpl implements InternerImplEnum {
@@ -406,7 +408,10 @@ final class BenchmarkHelpers {
   }
 
   public enum ListSizeDistribution {
-    UNIFORM_0_TO_2(0, 2), UNIFORM_0_TO_9(0, 9), ALWAYS_0(0, 0), ALWAYS_10(10, 10);
+    UNIFORM_0_TO_2(0, 2),
+    UNIFORM_0_TO_9(0, 9),
+    ALWAYS_0(0, 0),
+    ALWAYS_10(10, 10);
 
     final int min;
     final int max;

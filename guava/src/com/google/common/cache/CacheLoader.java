@@ -23,6 +23,7 @@ import com.google.common.base.Supplier;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableFutureTask;
+import com.google.errorprone.annotations.CheckReturnValue;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -34,23 +35,30 @@ import java.util.concurrent.Executor;
  * <p>Most implementations will only need to implement {@link #load}. Other methods may be
  * overridden as desired.
  *
- * <p>Usage example: <pre>   {@code
+ * <p>Usage example:
  *
- *   CacheLoader<Key, Graph> loader = new CacheLoader<Key, Graph>() {
- *     public Graph load(Key key) throws AnyException {
- *       return createExpensiveGraph(key);
- *     }
- *   };
- *   LoadingCache<Key, Graph> cache = CacheBuilder.newBuilder().build(loader);}</pre>
+ * <pre>{@code
+ * CacheLoader<Key, Graph> loader = new CacheLoader<Key, Graph>() {
+ *   public Graph load(Key key) throws AnyException {
+ *     return createExpensiveGraph(key);
+ *   }
+ * };
+ * LoadingCache<Key, Graph> cache = CacheBuilder.newBuilder().build(loader);
+ * }</pre>
+ *
+ * <p>Since this example doesn't support reloading or bulk loading, it can also be specified much
+ * more simply:
+ *
+ * <pre>{@code
+ * CacheLoader<Key, Graph> loader = CacheLoader.from(key -> createExpensiveGraph(key));
+ * }</pre>
  *
  * @author Charles Fry
  * @since 10.0
  */
 @GwtCompatible(emulated = true)
 public abstract class CacheLoader<K, V> {
-  /**
-   * Constructor for use by subclasses.
-   */
+  /** Constructor for use by subclasses. */
   protected CacheLoader() {}
 
   /**
@@ -67,12 +75,12 @@ public abstract class CacheLoader<K, V> {
 
   /**
    * Computes or retrieves a replacement value corresponding to an already-cached {@code key}. This
-   * method is called when an existing cache entry is refreshed by
-   * {@link CacheBuilder#refreshAfterWrite}, or through a call to {@link LoadingCache#refresh}.
+   * method is called when an existing cache entry is refreshed by {@link
+   * CacheBuilder#refreshAfterWrite}, or through a call to {@link LoadingCache#refresh}.
    *
    * <p>This implementation synchronously delegates to {@link #load}. It is recommended that it be
-   * overridden with an asynchronous implementation when using
-   * {@link CacheBuilder#refreshAfterWrite}.
+   * overridden with an asynchronous implementation when using {@link
+   * CacheBuilder#refreshAfterWrite}.
    *
    * <p><b>Note:</b> <i>all exceptions thrown by this method will be logged and then swallowed</i>.
    *
@@ -94,8 +102,8 @@ public abstract class CacheLoader<K, V> {
   }
 
   /**
-   * Computes or retrieves the values corresponding to {@code keys}. This method is called by
-   * {@link LoadingCache#getAll}.
+   * Computes or retrieves the values corresponding to {@code keys}. This method is called by {@link
+   * LoadingCache#getAll}.
    *
    * <p>If the returned map doesn't contain all requested {@code keys} then the entries it does
    * contain will be cached, but {@code getAll} will throw an exception. If the returned map
@@ -122,15 +130,29 @@ public abstract class CacheLoader<K, V> {
   }
 
   /**
-   * Returns a cache loader based on an <i>existing</i> function instance. Note that there's no need
-   * to create a <i>new</i> function just to pass it in here; just subclass {@code CacheLoader} and
-   * implement {@link #load load} instead.
+   * Returns a cache loader that uses {@code function} to load keys, without supporting either
+   * reloading or bulk loading. This allows creating a cache loader using a lambda expression.
    *
    * @param function the function to be used for loading values; must never return {@code null}
    * @return a cache loader that loads values by passing each key to {@code function}
    */
+  @CheckReturnValue
   public static <K, V> CacheLoader<K, V> from(Function<K, V> function) {
-    return new FunctionToCacheLoader<K, V>(function);
+    return new FunctionToCacheLoader<>(function);
+  }
+
+  /**
+   * Returns a cache loader based on an <i>existing</i> supplier instance. Note that there's no need
+   * to create a <i>new</i> supplier just to pass it in here; just subclass {@code CacheLoader} and
+   * implement {@link #load load} instead.
+   *
+   * @param supplier the supplier to be used for loading values; must never return {@code null}
+   * @return a cache loader that loads values by calling {@link Supplier#get}, irrespective of the
+   *     key
+   */
+  @CheckReturnValue
+  public static <V> CacheLoader<Object, V> from(Supplier<V> supplier) {
+    return new SupplierToCacheLoader<V>(supplier);
   }
 
   private static final class FunctionToCacheLoader<K, V> extends CacheLoader<K, V>
@@ -150,27 +172,15 @@ public abstract class CacheLoader<K, V> {
   }
 
   /**
-   * Returns a cache loader based on an <i>existing</i> supplier instance. Note that there's no need
-   * to create a <i>new</i> supplier just to pass it in here; just subclass {@code CacheLoader} and
-   * implement {@link #load load} instead.
-   *
-   * @param supplier the supplier to be used for loading values; must never return {@code null}
-   * @return a cache loader that loads values by calling {@link Supplier#get}, irrespective of the
-   *     key
-   */
-  public static <V> CacheLoader<Object, V> from(Supplier<V> supplier) {
-    return new SupplierToCacheLoader<V>(supplier);
-  }
-
-  /**
-   * Returns a {@code CacheLoader} which wraps {@code loader}, executing calls to
-   * {@link CacheLoader#reload} using {@code executor}.
+   * Returns a {@code CacheLoader} which wraps {@code loader}, executing calls to {@link
+   * CacheLoader#reload} using {@code executor}.
    *
    * <p>This method is useful only when {@code loader.reload} has a synchronous implementation, such
    * as {@linkplain #reload the default implementation}.
    *
    * @since 17.0
    */
+  @CheckReturnValue
   @GwtIncompatible // Executor + Futures
   public static <K, V> CacheLoader<K, V> asyncReloading(
       final CacheLoader<K, V> loader, final Executor executor) {

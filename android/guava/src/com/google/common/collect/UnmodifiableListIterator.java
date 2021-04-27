@@ -17,11 +17,11 @@
 package com.google.common.collect;
 
 import com.google.common.annotations.GwtCompatible;
+import com.google.errorprone.annotations.DoNotCall;
 import java.util.ListIterator;
 
 /**
- * A list iterator that does not support {@link #remove}, {@link #add}, or
- * {@link #set}.
+ * A list iterator that does not support {@link #remove}, {@link #add}, or {@link #set}.
  *
  * @since 7.0
  * @author Louis Wasserman
@@ -40,6 +40,7 @@ public abstract class UnmodifiableListIterator<E> extends UnmodifiableIterator<E
    */
   @Deprecated
   @Override
+  @DoNotCall("Always throws UnsupportedOperationException")
   public final void add(E e) {
     throw new UnsupportedOperationException();
   }
@@ -52,6 +53,7 @@ public abstract class UnmodifiableListIterator<E> extends UnmodifiableIterator<E
    */
   @Deprecated
   @Override
+  @DoNotCall("Always throws UnsupportedOperationException")
   public final void set(E e) {
     throw new UnsupportedOperationException();
   }

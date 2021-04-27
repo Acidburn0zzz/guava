@@ -17,7 +17,7 @@
 package com.google.common.graph;
 
 import com.google.common.annotations.Beta;
-import java.util.Set;
+import com.google.errorprone.annotations.DoNotMock;
 
 /**
  * A functional interface for <a
@@ -31,7 +31,7 @@ import java.util.Set;
  * Given an algorithm, for example:
  *
  * <pre>{@code
- *   public <N> someGraphAlgorithm(N startNode, SuccessorsFunction<N> successorsFunction);
+ * public <N> someGraphAlgorithm(N startNode, SuccessorsFunction<N> successorsFunction);
  * }</pre>
  *
  * you will invoke it depending on the graph representation you're using.
@@ -40,7 +40,7 @@ import java.util.Set;
  * {@link ValueGraph}, and {@link Network}):
  *
  * <pre>{@code
- *   someGraphAlgorithm(startNode, graph);
+ * someGraphAlgorithm(startNode, graph);
  * }</pre>
  *
  * This works because those types each implement {@code SuccessorsFunction}. It will also work with
@@ -50,14 +50,15 @@ import java.util.Set;
  * which has a method {@code getChildren()} that retrieves its successors in a graph:
  *
  * <pre>{@code
- *   someGraphAlgorithm(startNode, MyNode::getChildren);
+ * someGraphAlgorithm(startNode, MyNode::getChildren);
  * }</pre>
  *
  * <p>If you have some other mechanism for returning the successors of a node, or one that doesn't
- * return a {@code Set<N>}, then you can use a lambda to perform a more general transformation:
+ * return an {@code Iterable<? extends N>}, then you can use a lambda to perform a more general
+ * transformation:
  *
  * <pre>{@code
- *   someGraphAlgorithm(startNode, node -> ImmutableSet.copyOf(node.getChildren());
+ * someGraphAlgorithm(startNode, node -> ImmutableList.of(node.leftChild(), node.rightChild()));
  * }</pre>
  *
  * <p>Graph algorithms that need additional capabilities (accessing both predecessors and
@@ -75,10 +76,11 @@ import java.util.Set;
  * @author Joshua O'Madadhain
  * @author Jens Nyman
  * @param <N> Node parameter type
- * @since 22.0
+ * @since 23.0
  */
-// TODO(b/35456940): Update the documentation to reflect the new interfaces
 @Beta
+@DoNotMock("Implement with a lambda, or use GraphBuilder to build a Graph with the desired edges")
+@ElementTypesAreNonnullByDefault
 public interface SuccessorsFunction<N> {
 
   /**
@@ -88,7 +90,20 @@ public interface SuccessorsFunction<N> {
    * <p>This is <i>not</i> the same as "all nodes reachable from {@code node} by following outgoing
    * edges". For that functionality, see {@link Graphs#reachableNodes(Graph, Object)}.
    *
+   * <p>Some algorithms that operate on a {@code SuccessorsFunction} may produce undesired results
+   * if the returned {@link Iterable} contains duplicate elements. Implementations of such
+   * algorithms should document their behavior in the presence of duplicates.
+   *
+   * <p>The elements of the returned {@code Iterable} must each be:
+   *
+   * <ul>
+   *   <li>Non-null
+   *   <li>Usable as {@code Map} keys (see the Guava User Guide's section on <a
+   *       href="https://github.com/google/guava/wiki/GraphsExplained#graph-elements-nodes-and-edges">
+   *       graph elements</a> for details)
+   * </ul>
+   *
    * @throws IllegalArgumentException if {@code node} is not an element of this graph
    */
-  Set<N> successors(N node);
+  Iterable<? extends N> successors(N node);
 }

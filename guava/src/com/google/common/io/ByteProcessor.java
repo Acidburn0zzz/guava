@@ -17,18 +17,20 @@ package com.google.common.io;
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.DoNotMock;
 import java.io.IOException;
 
 /**
  * A callback interface to process bytes from a stream.
  *
- * <p>{@link #processBytes} will be called for each chunk of data that is read,
- * and should return {@code false} when you want to stop processing.
+ * <p>{@link #processBytes} will be called for each chunk of data that is read, and should return
+ * {@code false} when you want to stop processing.
  *
  * @author Chris Nokleberg
  * @since 1.0
  */
 @Beta
+@DoNotMock("Implement it normally")
 @GwtIncompatible
 public interface ByteProcessor<T> {
   /**

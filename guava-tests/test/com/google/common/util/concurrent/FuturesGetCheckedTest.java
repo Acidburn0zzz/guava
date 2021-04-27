@@ -15,6 +15,7 @@
 package com.google.common.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.util.concurrent.ClassPathUtil.parseJavaClassPath;
 import static com.google.common.util.concurrent.Futures.getChecked;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.FuturesGetCheckedInputs.CHECKED_EXCEPTION;
@@ -48,9 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import junit.framework.TestCase;
 
-/**
- * Unit tests for {@link Futures#getChecked(Future, Class)}.
- */
+/** Unit tests for {@link Futures#getChecked(Future, Class)}. */
 public class FuturesGetCheckedTest extends TestCase {
   // Boring untimed-get tests:
 
@@ -65,7 +64,7 @@ public class FuturesGetCheckedTest extends TestCase {
       getChecked(future, TwoArgConstructorException.class);
       fail();
     } catch (TwoArgConstructorException expected) {
-      assertThat(expected.getCause()).isInstanceOf(InterruptedException.class);
+      assertThat(expected).hasCauseThat().isInstanceOf(InterruptedException.class);
       assertTrue(Thread.currentThread().isInterrupted());
     } finally {
       Thread.interrupted();
@@ -87,7 +86,7 @@ public class FuturesGetCheckedTest extends TestCase {
       getChecked(FAILED_FUTURE_CHECKED_EXCEPTION, TwoArgConstructorException.class);
       fail();
     } catch (TwoArgConstructorException expected) {
-      assertEquals(CHECKED_EXCEPTION, expected.getCause());
+      assertThat(expected).hasCauseThat().isEqualTo(CHECKED_EXCEPTION);
     }
   }
 
@@ -97,7 +96,7 @@ public class FuturesGetCheckedTest extends TestCase {
       getChecked(FAILED_FUTURE_UNCHECKED_EXCEPTION, TwoArgConstructorException.class);
       fail();
     } catch (UncheckedExecutionException expected) {
-      assertEquals(UNCHECKED_EXCEPTION, expected.getCause());
+      assertThat(expected).hasCauseThat().isEqualTo(UNCHECKED_EXCEPTION);
     }
   }
 
@@ -106,7 +105,7 @@ public class FuturesGetCheckedTest extends TestCase {
       getChecked(FAILED_FUTURE_ERROR, TwoArgConstructorException.class);
       fail();
     } catch (ExecutionError expected) {
-      assertEquals(ERROR, expected.getCause());
+      assertThat(expected).hasCauseThat().isEqualTo(ERROR);
     }
   }
 
@@ -115,7 +114,7 @@ public class FuturesGetCheckedTest extends TestCase {
       getChecked(FAILED_FUTURE_OTHER_THROWABLE, TwoArgConstructorException.class);
       fail();
     } catch (TwoArgConstructorException expected) {
-      assertEquals(OTHER_THROWABLE, expected.getCause());
+      assertThat(expected).hasCauseThat().isEqualTo(OTHER_THROWABLE);
     }
   }
 
@@ -161,7 +160,7 @@ public class FuturesGetCheckedTest extends TestCase {
       getChecked(FAILED_FUTURE_CHECKED_EXCEPTION, ExceptionWithGoodAndBadConstructor.class);
       fail();
     } catch (ExceptionWithGoodAndBadConstructor expected) {
-      assertSame(CHECKED_EXCEPTION, expected.getCause());
+      assertThat(expected).hasCauseThat().isSameInstanceAs(CHECKED_EXCEPTION);
     }
   }
 
@@ -179,7 +178,7 @@ public class FuturesGetCheckedTest extends TestCase {
       getChecked(future, TwoArgConstructorException.class, 0, SECONDS);
       fail();
     } catch (TwoArgConstructorException expected) {
-      assertThat(expected.getCause()).isInstanceOf(InterruptedException.class);
+      assertThat(expected).hasCauseThat().isInstanceOf(InterruptedException.class);
       assertTrue(Thread.currentThread().isInterrupted());
     } finally {
       Thread.interrupted();
@@ -201,7 +200,7 @@ public class FuturesGetCheckedTest extends TestCase {
       getChecked(FAILED_FUTURE_CHECKED_EXCEPTION, TwoArgConstructorException.class, 0, SECONDS);
       fail();
     } catch (TwoArgConstructorException expected) {
-      assertEquals(CHECKED_EXCEPTION, expected.getCause());
+      assertThat(expected).hasCauseThat().isEqualTo(CHECKED_EXCEPTION);
     }
   }
 
@@ -210,7 +209,7 @@ public class FuturesGetCheckedTest extends TestCase {
       getChecked(FAILED_FUTURE_UNCHECKED_EXCEPTION, TwoArgConstructorException.class, 0, SECONDS);
       fail();
     } catch (UncheckedExecutionException expected) {
-      assertEquals(UNCHECKED_EXCEPTION, expected.getCause());
+      assertThat(expected).hasCauseThat().isEqualTo(UNCHECKED_EXCEPTION);
     }
   }
 
@@ -219,7 +218,7 @@ public class FuturesGetCheckedTest extends TestCase {
       getChecked(FAILED_FUTURE_ERROR, TwoArgConstructorException.class, 0, SECONDS);
       fail();
     } catch (ExecutionError expected) {
-      assertEquals(ERROR, expected.getCause());
+      assertThat(expected).hasCauseThat().isEqualTo(ERROR);
     }
   }
 
@@ -228,7 +227,7 @@ public class FuturesGetCheckedTest extends TestCase {
       getChecked(FAILED_FUTURE_OTHER_THROWABLE, TwoArgConstructorException.class, 0, SECONDS);
       fail();
     } catch (TwoArgConstructorException expected) {
-      assertEquals(OTHER_THROWABLE, expected.getCause());
+      assertThat(expected).hasCauseThat().isEqualTo(OTHER_THROWABLE);
     }
   }
 
@@ -257,7 +256,7 @@ public class FuturesGetCheckedTest extends TestCase {
       getChecked(future, TwoArgConstructorException.class, 0, SECONDS);
       fail();
     } catch (TwoArgConstructorException expected) {
-      assertThat(expected.getCause()).isInstanceOf(TimeoutException.class);
+      assertThat(expected).hasCauseThat().isInstanceOf(TimeoutException.class);
     }
   }
 
@@ -279,7 +278,7 @@ public class FuturesGetCheckedTest extends TestCase {
     }
   }
 
-  public void testGetCheckedTimed_withGoodAndBadExceptionConstructor() throws Exception {
+  public void testGetCheckedTimed_withGoodAndBadExceptionConstructor() {
     try {
       getChecked(
           FAILED_FUTURE_CHECKED_EXCEPTION,
@@ -288,7 +287,7 @@ public class FuturesGetCheckedTest extends TestCase {
           TimeUnit.SECONDS);
       fail();
     } catch (ExceptionWithGoodAndBadConstructor expected) {
-      assertSame(CHECKED_EXCEPTION, expected.getCause());
+      assertThat(expected).hasCauseThat().isSameInstanceAs(CHECKED_EXCEPTION);
     }
   }
 
@@ -345,14 +344,15 @@ public class FuturesGetCheckedTest extends TestCase {
       getChecked(FAILED_FUTURE_CHECKED_EXCEPTION, ExceptionWithoutThrowableConstructor.class);
       fail();
     } catch (ExceptionWithoutThrowableConstructor expected) {
-      assertThat(expected.getMessage()).contains("mymessage");
-      assertEquals(CHECKED_EXCEPTION, expected.getCause());
+      assertThat(expected).hasMessageThat().contains("mymessage");
+      assertThat(expected).hasCauseThat().isEqualTo(CHECKED_EXCEPTION);
     }
   }
 
   // Class unloading test:
 
   public static final class WillBeUnloadedException extends Exception {}
+
 
   public void testGetChecked_classUnloading() throws Exception {
     WeakReference<?> classUsedByGetChecked = doTestClassUnloading();
@@ -366,15 +366,14 @@ public class FuturesGetCheckedTest extends TestCase {
    * getChecked} holds no strong references to the class.
    */
   private WeakReference<?> doTestClassUnloading() throws Exception {
-    URLClassLoader myLoader = (URLClassLoader) getClass().getClassLoader();
-    URLClassLoader shadowLoader = new URLClassLoader(myLoader.getURLs(), null);
+    URLClassLoader shadowLoader = new URLClassLoader(parseJavaClassPath(), null);
     @SuppressWarnings("unchecked")
     Class<WillBeUnloadedException> shadowClass =
         (Class<WillBeUnloadedException>)
             Class.forName(WillBeUnloadedException.class.getName(), false, shadowLoader);
     assertNotSame(shadowClass, WillBeUnloadedException.class);
     getChecked(immediateFuture("foo"), shadowClass);
-    return new WeakReference<ClassLoader>(shadowLoader);
+    return new WeakReference<>(shadowLoader);
   }
 
   /*

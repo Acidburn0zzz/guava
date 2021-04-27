@@ -32,14 +32,14 @@ import java.util.Set;
 import junit.framework.TestSuite;
 
 /**
- * Creates, based on your criteria, a JUnit test suite that exhaustively tests
- * a SortedMap implementation.
+ * Creates, based on your criteria, a JUnit test suite that exhaustively tests a SortedMap
+ * implementation.
  */
 @GwtIncompatible
 public class SortedMapTestSuiteBuilder<K, V> extends MapTestSuiteBuilder<K, V> {
   public static <K, V> SortedMapTestSuiteBuilder<K, V> using(
       TestSortedMapGenerator<K, V> generator) {
-    SortedMapTestSuiteBuilder<K, V> result = new SortedMapTestSuiteBuilder<K, V>();
+    SortedMapTestSuiteBuilder<K, V> result = new SortedMapTestSuiteBuilder<>();
     result.usingGenerator(generator);
     return result;
   }
@@ -85,8 +85,8 @@ public class SortedMapTestSuiteBuilder<K, V> extends MapTestSuiteBuilder<K, V> {
   }
 
   /**
-   * To avoid infinite recursion, test suites with these marker features won't
-   * have derived suites created for them.
+   * To avoid infinite recursion, test suites with these marker features won't have derived suites
+   * created for them.
    */
   enum NoRecurse implements Feature<Void> {
     SUBMAP,
@@ -101,9 +101,8 @@ public class SortedMapTestSuiteBuilder<K, V> extends MapTestSuiteBuilder<K, V> {
   /**
    * Creates a suite whose map has some elements filtered out of view.
    *
-   * <p>Because the map may be ascending or descending, this test must derive
-   * the relative order of these extreme values rather than relying on their
-   * regular sort ordering.
+   * <p>Because the map may be ascending or descending, this test must derive the relative order of
+   * these extreme values rather than relying on their regular sort ordering.
    */
   final TestSuite createSubmapSuite(
       final FeatureSpecificTestSuiteBuilder<
@@ -114,7 +113,7 @@ public class SortedMapTestSuiteBuilder<K, V> extends MapTestSuiteBuilder<K, V> {
     final TestSortedMapGenerator<K, V> delegate =
         (TestSortedMapGenerator<K, V>) parentBuilder.getSubjectGenerator().getInnerGenerator();
 
-    List<Feature<?>> features = new ArrayList<Feature<?>>();
+    List<Feature<?>> features = new ArrayList<>();
     features.add(NoRecurse.SUBMAP);
     features.addAll(parentBuilder.getFeatures());
 

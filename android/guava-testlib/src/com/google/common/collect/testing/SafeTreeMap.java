@@ -30,9 +30,8 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 /**
- * A wrapper around {@code TreeMap} that aggressively checks to see if keys are
- * mutually comparable. This implementation passes the navigable map test
- * suites.
+ * A wrapper around {@code TreeMap} that aggressively checks to see if keys are mutually comparable.
+ * This implementation passes the navigable map test suites.
  *
  * @author Louis Wasserman
  */
@@ -104,9 +103,7 @@ public final class SafeTreeMap<K, V> implements Serializable, NavigableMap<K, V>
   public boolean containsKey(Object key) {
     try {
       return delegate.containsKey(checkValid(key));
-    } catch (NullPointerException e) {
-      return false;
-    } catch (ClassCastException e) {
+    } catch (NullPointerException | ClassCastException e) {
       return false;
     }
   }
@@ -123,7 +120,7 @@ public final class SafeTreeMap<K, V> implements Serializable, NavigableMap<K, V>
 
   @Override
   public NavigableMap<K, V> descendingMap() {
-    return new SafeTreeMap<K, V>(delegate.descendingMap());
+    return new SafeTreeMap<>(delegate.descendingMap());
   }
 
   @Override
@@ -137,9 +134,7 @@ public final class SafeTreeMap<K, V> implements Serializable, NavigableMap<K, V>
       public boolean contains(Object object) {
         try {
           return delegate().contains(object);
-        } catch (NullPointerException e) {
-          return false;
-        } catch (ClassCastException e) {
+        } catch (NullPointerException | ClassCastException e) {
           return false;
         }
       }
@@ -198,7 +193,7 @@ public final class SafeTreeMap<K, V> implements Serializable, NavigableMap<K, V>
 
   @Override
   public NavigableMap<K, V> headMap(K toKey, boolean inclusive) {
-    return new SafeTreeMap<K, V>(delegate.headMap(checkValid(toKey), inclusive));
+    return new SafeTreeMap<>(delegate.headMap(checkValid(toKey), inclusive));
   }
 
   @Override
@@ -281,7 +276,7 @@ public final class SafeTreeMap<K, V> implements Serializable, NavigableMap<K, V>
 
   @Override
   public NavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
-    return new SafeTreeMap<K, V>(
+    return new SafeTreeMap<>(
         delegate.subMap(checkValid(fromKey), fromInclusive, checkValid(toKey), toInclusive));
   }
 
@@ -297,7 +292,7 @@ public final class SafeTreeMap<K, V> implements Serializable, NavigableMap<K, V>
 
   @Override
   public NavigableMap<K, V> tailMap(K fromKey, boolean inclusive) {
-    return new SafeTreeMap<K, V>(delegate.tailMap(checkValid(fromKey), inclusive));
+    return new SafeTreeMap<>(delegate.tailMap(checkValid(fromKey), inclusive));
   }
 
   @Override

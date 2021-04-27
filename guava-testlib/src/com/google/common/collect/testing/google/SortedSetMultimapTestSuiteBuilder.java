@@ -33,8 +33,8 @@ import java.util.Set;
 import junit.framework.TestSuite;
 
 /**
- * Creates, based on your criteria, a JUnit test suite that exhaustively tests
- * a {@code SortedSetMultimap} implementation.
+ * Creates, based on your criteria, a JUnit test suite that exhaustively tests a {@code
+ * SortedSetMultimap} implementation.
  *
  * @author Louis Wasserman
  */
@@ -44,7 +44,7 @@ public class SortedSetMultimapTestSuiteBuilder<K, V>
 
   public static <K, V> SortedSetMultimapTestSuiteBuilder<K, V> using(
       TestSetMultimapGenerator<K, V> generator) {
-    SortedSetMultimapTestSuiteBuilder<K, V> result = new SortedSetMultimapTestSuiteBuilder<K, V>();
+    SortedSetMultimapTestSuiteBuilder<K, V> result = new SortedSetMultimapTestSuiteBuilder<>();
     result.usingGenerator(generator);
     return result;
   }

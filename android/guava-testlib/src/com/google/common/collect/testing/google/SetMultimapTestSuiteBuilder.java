@@ -29,14 +29,13 @@ import com.google.common.collect.testing.features.Feature;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import junit.framework.TestSuite;
 
 /**
- * Creates, based on your criteria, a JUnit test suite that exhaustively tests
- * a {@code SetMultimap} implementation.
+ * Creates, based on your criteria, a JUnit test suite that exhaustively tests a {@code SetMultimap}
+ * implementation.
  *
  * @author Louis Wasserman
  */
@@ -46,7 +45,7 @@ public class SetMultimapTestSuiteBuilder<K, V>
 
   public static <K, V> SetMultimapTestSuiteBuilder<K, V> using(
       TestSetMultimapGenerator<K, V> generator) {
-    SetMultimapTestSuiteBuilder<K, V> result = new SetMultimapTestSuiteBuilder<K, V>();
+    SetMultimapTestSuiteBuilder<K, V> result = new SetMultimapTestSuiteBuilder<>();
     result.usingGenerator(generator);
     return result;
   }
@@ -96,7 +95,7 @@ public class SetMultimapTestSuiteBuilder<K, V>
   @Override
   TestSuite computeEntriesTestSuite(
       FeatureSpecificTestSuiteBuilder<
-              ?, ? extends OneSizeTestContainerGenerator<SetMultimap<K, V>, Map.Entry<K, V>>>
+              ?, ? extends OneSizeTestContainerGenerator<SetMultimap<K, V>, Entry<K, V>>>
           parentBuilder) {
     return SetTestSuiteBuilder.using(
             new EntriesGenerator<K, V>(parentBuilder.getSubjectGenerator()))
